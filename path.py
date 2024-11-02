@@ -17,8 +17,22 @@ import time
 #the path is expressed as a list of configurations
 def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     #TODO
-    return [qinit, qgoal]
-    pass
+    #sampling configurations
+    
+    #Constrain np.rand() to 3.2, -3.2
+    #Calculate linear interpolation between cube init placement and cube_rand
+    #Discretise, and cmpute grap pose at each step until you get grasp pose that isn't valid
+    #Take the grasp pose that is valid before the unvalid one 
+    
+    cube_q_rand = np.array[np.rand(), np.rand(), np.rand(), cubeplacementq0[3:]]
+    cube_q, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
+    
+    
+    
+
+    return cube_q, success 
+    #return [qinit, qgoal]
+    #pass
 
 
 def displaypath(robot,path,dt,viz):
