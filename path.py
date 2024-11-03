@@ -27,17 +27,15 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     G = [(None,qinit)]
     
     rotation = cubeplacementq0.rotation
-    initial_position = cubeplacementq0.translation
-    goal_position = cubeplacementqgoal.translation
     sampled_positions = set()
     
     for _ in range(k):
         
         # Sampling configurations for the cube 
         while True: 
-            cube_x_rand = np.random.uniform(initial_position[0], goal_position[0])
-            cube_y_rand = np.random.uniform(initial_position[1], goal_position[1])
-            cube_z_rand = np.random.uniform(initial_position[2], goal_position[2])
+            cube_x_rand = np.random.uniform(0, 0.5)
+            cube_y_rand = np.random.uniform(-0.2, 0.2)
+            cube_z_rand = 0.93
 
             cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
             cube_q_rand = pin.SE3(rotation, cube_rand_translation)
