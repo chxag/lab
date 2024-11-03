@@ -56,6 +56,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
                 if not success:
                     break
                 else: 
+                    # Change the range of the sampling space 
                     x_range = (min(0, cube_x_rand - 0.1), max(0.5, cube_x_rand + 0.1))
                     y_range = (min(-0.2, cube_y_rand - 0.1), max(0.2, cube_y_rand + 0.1))   
                     z_range = (min(0.93, cube_z_rand - 0.1), max(1.2, cube_z_rand + 0.1))
