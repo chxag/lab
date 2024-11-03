@@ -29,14 +29,18 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     rotation = cubeplacementq0.rotation
     sampled_positions = set()
     goal_bias = 0.1
+
+    x_range = (0, 0.5) 
+    y_range = (-0.2, 0.2)
+    z_range = (0.93, 1.2)
     
     for iteration in range(k):
         
         while True: 
         # Sampling configurations for the cube 
-            cube_x_rand = np.random.uniform(0, 0.5)
-            cube_y_rand = np.random.uniform(-0.2, 0.2)
-            cube_z_rand = 0.93
+            cube_x_rand = np.random.uniform(*x_range)
+            cube_y_rand = np.random.uniform(*y_range)
+            cube_z_rand = np.random.uniform(*z_range) 
 
             cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
             cube_q_rand = pin.SE3(rotation, cube_rand_translation)
@@ -50,7 +54,11 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
                 print(f"Sampled configuration: {q_rand}, success: {success}")
             
                 if not success:
-                    break 
+                    break
+                else: 
+                    x_range = (max(0, cube_x_rand - 0.1), min(0.5, cube_x_rand + 0.1))
+                    y_range = (max(-0.2, cube_y_rand - 0.1), min(0.2, cube_y_rand + 0.1))   
+                    z_range = (max(0.93, cube_z_rand - 0.1), min(1.2, cube_z_rand + 0.1))
             
         # Find the nearest vertex to q_rand called q_near 
         for i, (parent,node) in enumerate(G):
