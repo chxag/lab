@@ -12,6 +12,7 @@ from numpy.linalg import pinv,inv,norm,svd,eig
 from tools import collision, getcubeplacement, setcubeplacement, projecttojointlimits
 from config import LEFT_HOOK, RIGHT_HOOK, LEFT_HAND, RIGHT_HAND, EPSILON
 from config import CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET
+from setup_meshcat import updatevisuals
 
 from tools import setcubeplacement
 
