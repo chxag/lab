@@ -105,7 +105,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
             G += [(len(G)-1, qgoal)]
             break
 
-        if (iteration + 1) % 100 == 0:
+        if (iteration + 1) % 10 == 0:
             print(f"Iteration {iteration + 1}: Current tree size = {len(G)}")
 
     # Reconstruct the path from qinit to qgoal
