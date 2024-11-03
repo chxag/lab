@@ -22,7 +22,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     k = 1000
     delta_q = 3.
     min_dist = 10e4
-    idex = -1
+    idx = -1
     
     G = [(None,qinit)]
     
@@ -31,24 +31,26 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     
     for _ in range(k):
         
+        # Sampling configurations for the cube 
         while True: 
-            cube_x_rand = np.random.uniform(-0.5, 0.5)
+            cube_x_rand = np.random.uniform(0, 0.5)
             cube_y_rand = np.random.uniform(-0.2, 0.2)
             cube_z_rand = 0.93
 
             cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
             cube_q_rand = pin.SE3(rotation, cube_rand_translation)
-            
             position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand) 
             if position_tuple not in sampled_positions: 
                 sampled_positions.add(position_tuple)
                 break
-
+                
+        # Generating valid pose for the randomly sampled cube position 
         q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
         
-        if not success:
+        if success:
             continue
         
+        # Find the nearest vertex to q_rand called q_near 
         for (i,node) in enumerate(G):
             dist = np.linalg.norm(q_rand - node[1])
             if dist < min_dist: 
@@ -57,35 +59,41 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         q_near_index = idx
         q_near = G[q_near_index][1]
         
+    # Return the closest configuration q_new such that the path q_near => q_new is the longest 
+    # along the linear interpolation (q_near,q_rand) that is collision free and of length <  delta_q
         q_end = q_rand.copy()
-        dist = np.linalg.norm(q_rand - q_near)
-        if delta_q is not None and dist > delta_q:
-            q_end = q_near * (1 - delta_q / dist) + q_end * (delta_q / dist)
-            dist = delta_q
-        dt = dist / discretisationsteps_newconf
+        dist_two = np.linalg.norm(q_rand - q_near)
+        if delta_q is not None and dist_two > delta_q:
+            q_end = q_near * (1 - delta_q / dist) + q_rand * (delta_q / dist_two)
+            dist_two = delta_q  
+        dt = dist_two / discretisationsteps_newconf
         for i in range(1, discretisationsteps_newconf):
             q_new = q_near * (1 - dt*i) + q_end * (dt*i)
             q_new, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
-            if success==False:
+            if success:
                 q_new = q_near * (1 - dt*(i-1)) + q_end * (dt*(i-1))
             else:
                 q_new = q_end
+                 
+    # Add the edge and vertex from q_near to q_new to the tree G
         G += [(q_near_idx, q_new)]
-        
+
+    # Return the closest configuration q such that the path q => q_new is the longest 
+    # along the linear interpolation (q_new,qgoal) that is collision free and of length <  delta_q
         q_end_two = qgoal.copy()
-        dist_two = np.linalg.norm(qgoal - q_new) 
-        if delta_q is not None and dist > delta_q:
-            q_end_two = q_new * (1 - delta_q / dist) + qgoal * (delta_q / dist)
-            dist = delta_q
-        dt = dist / discretisationsteps_validedge
+        dist_three = np.linalg.norm(qgoal - q_new) 
+        if delta_q is not None and dist_three > delta_q:
+            q_end_two = q_new * (1 - delta_q / dist_three) + qgoal * (delta_q / dist_three)
+            dist_three = delta_q
+        dt = dist_three / discretisationsteps_validedge
         for i in range(1, discretisationsteps_validedge):
             q = q_new * (1 - dt*i) + q_end_two * (dt*i)
             q, success_two = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz) 
-            if success_two==False:
+            if success_two:
                 q = q_new * (1 - dt*(i-1)) + q_end_two * (dt*(i-1))
             else:
                 q = q_end_two
-        
+        # If the edge between q_new and q_goal is valid then a path has been found 
         if np.linalg.norm(qgoal - q) < 1e-3:
             print("Path found!")
             G += [(len(G)-1, qgoal)]
@@ -93,8 +101,6 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
                                              
     #return [qinit, qgoal]
     #pass 
-    
-
 def displaypath(robot,path,dt,viz):
     for q in path:
         viz.display(q)
