@@ -32,25 +32,26 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     
     for iteration in range(k):
         
+        while True: 
         # Sampling configurations for the cube 
-        cube_x_rand = np.random.uniform(0, 0.5)
-        cube_y_rand = np.random.uniform(-0.2, 0.2)
-        cube_z_rand = 0.93
+            cube_x_rand = np.random.uniform(0, 0.5)
+            cube_y_rand = np.random.uniform(-0.2, 0.2)
+            cube_z_rand = 0.93
 
-        cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
-        cube_q_rand = pin.SE3(rotation, cube_rand_translation)
-        position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand) 
-        if position_tuple not in sampled_positions: 
-            sampled_positions.add(position_tuple)
-            print(f"Sampled position: {cube_rand_translation}")
+            cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
+            cube_q_rand = pin.SE3(rotation, cube_rand_translation)
+            position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand) 
+            if position_tuple not in sampled_positions: 
+                sampled_positions.add(position_tuple)
+                print(f"Sampled position: {cube_rand_translation}")
 
-            # Generating valid pose for the randomly sampled cube position 
-            q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
-            print(f"Sampled configuration: {q_rand}, success: {success}")
-        
-            if not success:
-                break 
-        
+                # Generating valid pose for the randomly sampled cube position 
+                q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
+                print(f"Sampled configuration: {q_rand}, success: {success}")
+            
+                if not success:
+                    break 
+            
         # Find the nearest vertex to q_rand called q_near 
         for i, (parent,node) in enumerate(G):
             dist = np.linalg.norm(q_rand - node[1])
