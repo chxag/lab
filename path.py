@@ -33,22 +33,21 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     for iteration in range(k):
         
         # Sampling configurations for the cube 
-        while True:
-            if np.random.uniform() < goal_bias:
-                cube_x_rand = cubeplacementqgoal.translation[0]
-                cube_y_rand = cubeplacementqgoal.translation[1]
-                cube_z_rand = cubeplacementqgoal.translation[2]
-            else:
-                cube_x_rand = np.random.uniform(0, 0.5)
-                cube_y_rand = np.random.uniform(-0.2, 0.2)
-                cube_z_rand = 0.93 
+        if np.random.uniform() < goal_bias:
+            cube_x_rand = cubeplacementqgoal.translation[0]
+            cube_y_rand = cubeplacementqgoal.translation[1]
+            cube_z_rand = cubeplacementqgoal.translation[2]
+        else:
+            cube_x_rand = np.random.uniform(0, 0.5)
+            cube_y_rand = np.random.uniform(-0.2, 0.2)
+            cube_z_rand = 0.93 
 
-            cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
-            cube_q_rand = pin.SE3(rotation, cube_rand_translation)
-            position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand) 
-            if position_tuple not in sampled_positions: 
-                sampled_positions.add(position_tuple)
-                break
+        cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
+        cube_q_rand = pin.SE3(rotation, cube_rand_translation)
+        position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand) 
+        if position_tuple not in sampled_positions: 
+            continue
+        sampled_positions.add(position_tuple)
         print(f"Sampled position: {cube_rand_translation}")
 
         # Generating valid pose for the randomly sampled cube position 
