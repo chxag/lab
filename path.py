@@ -58,7 +58,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
             continue
         
         # Find the nearest vertex to q_rand called q_near 
-        for i, (parent,node) in enumerate(G):
+        for (i,node) in enumerate(G):
             dist = np.linalg.norm(q_rand - node[1])
             if dist < min_dist: 
                 min_dist = dist
