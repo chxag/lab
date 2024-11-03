@@ -8,9 +8,7 @@ Created on Thu Sep 21 11:44:32 2023
 
 import pinocchio as pin
 import numpy as np
-import random
 from numpy.linalg import pinv
-# from tools import 
 
 from config import LEFT_HAND, RIGHT_HAND
 import time
@@ -19,113 +17,117 @@ import time
 #the path is expressed as a list of configurations
 def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     #TODO
-    #sampling configurations
+    discretisationsteps_newconf = 200 
+    discretisationsteps_validedge = 200 
+    k = 1000
+    delta_q = 3.
+    min_dist = 10e4
+    idx = -1
     
-    #Constrain np.rand() to 3.2, -3.2
-    #Calculate linear interpolation between cube init placement and cube_rand
-    #Discretise, and cmpute grap pose at each step until you get grasp pose that isn't valid
-    #Take the grasp pose that is valid before the unvalid one 
-    
-    # first get random configuration of the cube with constraints in consideration
-    G = [(None, qinit)]
+    G = [(None,np.array(qinit))]
     
     rotation = cubeplacementq0.rotation
     translation = cubeplacementq0.translation
-    
-    rotation_goal = cubeplacementqgoal.rotation
     translation_goal = cubeplacementqgoal.translation
     
-    sample_positions = set()
+    sampled_positions = set()
+    goal_bias = 0.1
+
+    x_range = (translation[0], translation_goal[0])
+    y_range = (translation[1], translation_goal[1])
+    z_range = (translation[2], translation[2]+0.3)
     
-    k = 100 #iteration number
-    delta_q = 3.
-    min_dist = float('inf')
-    
-    discretisationsteps_newconf = 20
-    discretisationsteps_validedge = 20
-    
-    
-    
-    idx = -1
-    
-    
-    for _ in range(k):
+    for iteration in range(k):
         
-        while True:
-            #bias towards the goal config
-            b = np.random.uniform(0.0, 1.) # adjust the value to control the bias
-            
-            #cube position
-            cube_x_rand = (1-b) * translation[0] + b * translation_goal[0] + np.random.uniform(-0.1,0.1)
-            cube_y_rand = (1-b) * translation[1] + b * translation_goal[1] + np.random.uniform(-0.1,0.1)
-            cube_z_rand = translation[2]
+        while True: 
+        # Sampling configurations for the cube 
+            cube_x_rand = np.random.uniform(*x_range)
+            cube_y_rand = np.random.uniform(*y_range)
+            cube_z_rand = np.random.uniform(*z_range) 
 
             cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
             cube_q_rand = pin.SE3(rotation, cube_rand_translation)
-            
-            position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand)
-            if position_tuple not in sample_positions:
-                sample_positions.add(position_tuple)
-                break
+            position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand) 
+            if position_tuple not in sampled_positions: 
+                sampled_positions.add(position_tuple)
+                print(f"Sampled position: {cube_rand_translation}")
 
-        q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
-        
-        if not success:
-            continue
-        
-        #nearest vertex
-        for (i, node) in enumerate(G):
+                # Generating valid pose for the randomly sampled cube position 
+                q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
+                print(f"Sampled configuration: {q_rand}, success: {success}")
+            
+                if not success:
+                    break
+                else: 
+                    # Change the range of the sampling space 
+                    x_range = (min(0, cube_x_rand - 0.1), max(0.5, cube_x_rand + 0.1))
+                    y_range = (min(-0.2, cube_y_rand - 0.1), max(0.2, cube_y_rand + 0.1))   
+                    z_range = (min(0.93, cube_z_rand - 0.1), max(1.2, cube_z_rand + 0.1))
+            
+        # Find the nearest vertex to q_rand called q_near 
+        for i, (parent,node) in enumerate(G):
             dist = np.linalg.norm(q_rand - node[1])
-            if dist < min_dist:
+            if dist < min_dist: 
                 min_dist = dist
                 idx = i
-        near_idx = idx
-        q_near = G[near_idx][1]
+        q_near_index = idx
+        q_near = G[q_near_index][1]
         
-        #new configuration
+        print(f"Nearest vertex: {q_near}")
+
+    # Return the closest configuration q_new such that the path q_near => q_new is the longest 
+    # along the linear interpolation (q_near,q_rand) that is collision free and of length <  delta_q
         q_end = q_rand.copy()
-        dist = np.linalg.norm(q_rand - q_near)
-        if delta_q is not None and dist > delta_q:
-            q_end = q_near * (1 - delta_q/dist) + q_rand * (delta_q/dist)
-            dist = delta_q
-        
-        dt = dist / discretisationsteps_newconf
-        
-        for n in range(1, discretisationsteps_newconf):
-            q_new = q_near * (1 - dt*n) + q_end * (dt*n)
-            q_new, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
-            if success==False:
-                q_new = q_near * (1 - dt*(n-1)) + q_end * (dt*(n-1))
+        dist_two = np.linalg.norm(q_rand - q_near)
+        if delta_q is not None and dist_two > delta_q:
+            q_end = q_near * (1 - delta_q / dist) + q_rand * (delta_q / dist_two)
+            dist_two = delta_q  
+        dt = dist_two / discretisationsteps_newconf
+        for i in range(1, discretisationsteps_newconf):
+            q_new = q_near * (1 - dt*i) + q_end * (dt*i)
+            q_newt, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
+            if success:
+                q_new = q_near * (1 - dt*(i-1)) + q_end * (dt*(i-1))
             else:
                 q_new = q_end
-        
-        G += [(near_idx, q_new)]
-        
-        #valid edge check
-        q_end_check = qgoal.copy()
-        dist_check = np.linalg.norm(qgoal - q_new)
-        if delta_q is not None and dist_check > delta_q:
-            q_end_check = q_new * (1-delta_q/dist_check) + qgoal*(delta_q/dist_check)
-            dist_check = delta_q
-        dt_check = dist_check / discretisationsteps_validedge
-        for i in range(1, discretisationsteps_validedge):
-            q = q_new * (1-dt_check * i) + q_end_check * (dt_check * i)
-            q, success_two = computegrasppose(robot, qinit, cube, cube_q_rand, viz)
-            if success_two == False:
-                q_new_check = q_new * (q-dt_check * (i-1)) + q_end_check * (dt_check * (i-1))    
-            else:
-                q_new_check = q_end_check
-                
-        if np.linalg.norm(qgoal - q_new_check) < 1e-3:
-            print("Path found!")
-            path += [(len(G) - 1, qgoal)]
-            break 
-    	
-    return G
-    
-    #return [qinit, qgoal]
-    #pass
+        q_new = np.array(q_new)
+        print(f"New configuration: {q_new}")
+    # Add the edge and vertex from q_near to q_new to the tree G
+        G += [(q_near_index, q_new)]
 
+    # Return the closest configuration q such that the path q => q_new is the longest 
+    # along the linear interpolation (q_new,qgoal) that is collision free and of length <  delta_q
+        q_end_two = qgoal.copy()
+        dist_three = np.linalg.norm(qgoal - q_new) 
+        if delta_q is not None and dist_three > delta_q:
+            q_end_two = q_new * (1 - delta_q / dist_three) + qgoal * (delta_q / dist_three)
+            dist_three = delta_q
+        dt = dist_three / discretisationsteps_validedge
+        for i in range(1, discretisationsteps_validedge):
+            q = q_new * (1 - dt*i) + q_end_two * (dt*i)
+            q1, success_two = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz) 
+            if success_two:
+                q = q_new * (1 - dt*(i-1)) + q_end_two * (dt*(i-1))
+            else:
+                q = q_end_two
+        q = np.array(q)
+        print(f"New configuration: {q}")
+        # If the edge between q_new and q_goal is valid then a path has been found 
+        if np.linalg.norm(qgoal - q) < 1e-3:
+            print("Path found!")
+            G += [(len(G)-1, np.array(qgoal))]
+            break
+
+    # Reconstruct the path from qinit to qgoal
+    path = []
+    node = G[-1]
+    while node[0] is not None:
+        path = [node[1]] + path
+        node = G[node[0]]
+    path = [G[0][1]] + path
+    print(path)
+    return path
+                                             
 
 def displaypath(robot,path,dt,viz):
     for q in path:
@@ -136,7 +138,6 @@ def displaypath(robot,path,dt,viz):
 if __name__ == "__main__":
     from tools import setupwithmeshcat
     from config import CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET
-    from setup_meshcat import updatevisuals #was not imported initially
     from inverse_geometry import computeqgrasppose
     
     robot, cube, viz = setupwithmeshcat()
