@@ -48,8 +48,8 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
             q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
             print(f"Sampled configuration: {q_rand}, success: {success}")
         
-            if success:
-                continue
+            if not success:
+                break 
         
         # Find the nearest vertex to q_rand called q_near 
         for (i,node) in enumerate(G):
