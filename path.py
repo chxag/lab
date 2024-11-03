@@ -45,17 +45,16 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
         cube_q_rand = pin.SE3(rotation, cube_rand_translation)
         position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand) 
-        if position_tuple in sampled_positions: 
-            continue
-        sampled_positions.add(position_tuple)
-        print(f"Sampled position: {cube_rand_translation}")
+        if position_tuple not in sampled_positions: 
+            sampled_positions.add(position_tuple)
+            print(f"Sampled position: {cube_rand_translation}")
 
-        # Generating valid pose for the randomly sampled cube position 
-        q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
-        print(f"Sampled configuration: {q_rand}, success: {success}")
+            # Generating valid pose for the randomly sampled cube position 
+            q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
+            print(f"Sampled configuration: {q_rand}, success: {success}")
         
-        if success:
-            continue
+            if success:
+                continue
         
         # Find the nearest vertex to q_rand called q_near 
         for (i,node) in enumerate(G):
