@@ -112,13 +112,13 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
             break
 
     # Reconstruct the path from qinit to qgoal
-        path = []
-        node = G[-1]
-        while node[0] is not None:
-            path = [node[1]] + path
-            node = G[node[0]]
-        path = [G[0][1]] + path
-        return path
+    path = []
+    node = G[-1]
+    while node[0] is not None:
+        path = [node[1]] + path
+        node = G[node[0]]
+    path = [G[0][1]] + path
+    return path
                                              
 
 def displaypath(robot,path,dt,viz):
