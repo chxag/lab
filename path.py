@@ -117,7 +117,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         while node[0] is not None:
             path = [node[1]] + path
             node = G[node[0]]
-        path = G[0][1] + path
+        path = [G[0][1]] + path
         return path
                                              
 
