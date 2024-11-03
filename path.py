@@ -114,9 +114,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     path = G[0][1] + path
     return path
                                              
-    #return [qinit, qgoal]
-    #pass 
-    
+                                             
 def displaypath(robot,path,dt,viz):
     for q in path:
         viz.display(q)
