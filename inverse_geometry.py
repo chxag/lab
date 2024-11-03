@@ -14,6 +14,7 @@ from config import LEFT_HOOK, RIGHT_HOOK, LEFT_HAND, RIGHT_HAND, EPSILON
 from config import CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET
 
 from tools import setcubeplacement
+from setup_meshcat import updatevisuals
 
 def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
     '''Return a collision free configuration grasping a cube at a specific location and a success flag'''
@@ -56,10 +57,17 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
 
 #         if not collision(robot, qcurrent):
         qcurrent = pin.integrate(robot.model, qcurrent, v_q * 1e-2)
-        updatevisuals(viz, robot, cube, qcurrent)
+        qcurrent = projecttojointlimits(robot, qcurrent)
+        
+        if not collision(robot, qcurrent):
+            continue
+        
+#         updatevisuals(viz, robot, cube, qcurrent)
     
 #     print ("TODO: implement me")
+    updatevisuals(viz, robot, cube, qcurrent)
     return qcurrent, collision(robot, qcurrent)
+# and np.linalg.norm(cubetarget.translation - qcurrent[:3]) < EPSILON
     # distance between qcurrent and the goal < epsilon
 #     return robot.q0, False
             
