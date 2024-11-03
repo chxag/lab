@@ -75,7 +75,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         dt = dist_two / discretisationsteps_newconf
         for i in range(1, discretisationsteps_newconf):
             q_new = q_near * (1 - dt*i) + q_end * (dt*i)
-            q_new, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
+            q_newt, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
             if success:
                 q_new = q_near * (1 - dt*(i-1)) + q_end * (dt*(i-1))
             else:
@@ -94,7 +94,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         dt = dist_three / discretisationsteps_validedge
         for i in range(1, discretisationsteps_validedge):
             q = q_new * (1 - dt*i) + q_end_two * (dt*i)
-            q, success_two = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz) 
+            q1, success_two = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz) 
             if success_two:
                 q = q_new * (1 - dt*(i-1)) + q_end_two * (dt*(i-1))
             else:
@@ -114,7 +114,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     path = G[0][1] + path
     return path
                                              
-                                             
+
 def displaypath(robot,path,dt,viz):
     for q in path:
         viz.display(q)
