@@ -24,7 +24,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     min_dist = 10e4
     idx = -1
     
-    G = [(None,qinit)]
+    G = [(None,np.array(qinit))]
     
     rotation = cubeplacementq0.rotation
     sampled_positions = set()
@@ -83,7 +83,8 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
                 q_new = q_near * (1 - dt*(i-1)) + q_end * (dt*(i-1))
             else:
                 q_new = q_end
-        print(f"New configuration: {q_new}")
+        q_new = np.array(q_new)
+
     # Add the edge and vertex from q_near to q_new to the tree G
         G += [(q_near_index, q_new)]
 
@@ -102,7 +103,8 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
                 q = q_new * (1 - dt*(i-1)) + q_end_two * (dt*(i-1))
             else:
                 q = q_end_two
-        print(f"New configuration: {q}")
+        q = np.array(q)
+
         # If the edge between q_new and q_goal is valid then a path has been found 
         if np.linalg.norm(qgoal - q) < 1e-3:
             print("Path found!")
