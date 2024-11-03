@@ -30,7 +30,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     sampled_positions = set()
     goal_bias = 0.1
     
-    for _ in range(k):
+    for iteration in range(k):
         
         # Sampling configurations for the cube 
         while True:
@@ -104,6 +104,9 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
             print("Path found!")
             G += [(len(G)-1, qgoal)]
             break
+
+        if (iteration + 1) % 100 == 0:
+            print(f"Iteration {iteration + 1}: Current tree size = {len(G)}")
 
     # Reconstruct the path from qinit to qgoal
     path = []
