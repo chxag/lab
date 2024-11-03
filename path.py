@@ -45,7 +45,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
         cube_q_rand = pin.SE3(rotation, cube_rand_translation)
         position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand) 
-        if position_tuple not in sampled_positions: 
+        if position_tuple in sampled_positions: 
             continue
         sampled_positions.add(position_tuple)
         print(f"Sampled position: {cube_rand_translation}")
@@ -118,6 +118,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         path = [node[1]] + path
         node = G[node[0]]
     path = [G[0][1]] + path
+    print(path)
     return path
                                              
 
