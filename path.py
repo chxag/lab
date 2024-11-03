@@ -41,7 +41,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
             else:
                 cube_x_rand = np.random.uniform(0, 0.5)
                 cube_y_rand = np.random.uniform(-0.2, 0.2)
-                cube_z_rand = np.random.uniform(0.93, 1) 
+                cube_z_rand = 0.93 
 
             cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
             cube_q_rand = pin.SE3(rotation, cube_rand_translation)
