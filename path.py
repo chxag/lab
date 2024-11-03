@@ -29,6 +29,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     rotation = cubeplacementq0.rotation
     translation = cubeplacementq0.translation
     translation_goal = cubeplacementqgoal.translation
+    cube_q_target = pin.SE3(cubeplacementqgoal.rotation, translation_goal)
     
     sampled_positions = set()
     goal_bias = 0.1
@@ -125,6 +126,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         path = [node[1]] + path
         node = G[node[0]]
     path = [G[0][1]] + path
+    q_last, success_last = computeqgrasppose(robot,qinit,cube,cube_q_target,viz)
     print(path)
     return path
                                              
