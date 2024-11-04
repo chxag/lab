@@ -29,12 +29,8 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
         left_hook = robot.model.getFrameId(LEFT_HOOK)
         right_hook = robot.model.getFrameId(RIGHT_HOOK)
 
-    #     print(left_hook, right_hook, left_hand, right_hand)
-
         oMleft_hand = robot.data.oMf[left_hand]
         oMright_hand = robot.data.oMf[right_hand]
-
-    #     print(oMleft_hand, oMright_hand)
 
         oMleft_hook = getcubeplacement(cube, LEFT_HOOK)
         oMright_hook = getcubeplacement(cube, RIGHT_HOOK)
@@ -55,14 +51,12 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
 
         v_q = pinv(Jtotal)@error_both
 
-#         if not collision(robot, qcurrent):
         qcurrent = pin.integrate(robot.model, qcurrent, v_q * 1e-2)
-        updatevisuals(viz, robot, cube, qcurrent)
+        #updatevisuals(viz, robot, cube, qcurrent)
     
-#     print ("TODO: implement me")
+    updatevisuals(viz, robot, cube, qcurrent) 
     return qcurrent, collision(robot, qcurrent)
     # distance between qcurrent and the goal < epsilon
-#     return robot.q0, False
             
 if __name__ == "__main__":
     from tools import setupwithmeshcat
