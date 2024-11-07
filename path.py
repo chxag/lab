@@ -10,6 +10,7 @@ import pinocchio as pin
 import numpy as np
 from numpy.linalg import pinv
 from tools import setcubeplacement
+import matplotlib.pyplot as plt
 
 from config import LEFT_HAND, RIGHT_HAND
 from tools import collision, getcubeplacement, setcubeplacement, projecttojointlimits, distanceToObstacle
@@ -70,9 +71,9 @@ def NEW_CONF_CUBE(q_near, q_rand, discretisationsteps, delta_q=None):
         dist = delta_q
     dt = dist / discretisationsteps
     for i in range(1, discretisationsteps):
-        q_lerp = lerp(q_near, q_end, (dt*i)/dist)
+        q_lerp = lerp(np.array(q_near), np.array(q_end), (dt*i)/dist)
         if cube_collision(pin.SE3(q_lerp)):
-            return lerp(q_near, q_end, (dt*(i-1))/dist)
+            return lerp(np.array(q_near), np.array(q_end), (dt*(i-1))/dist)
     return q_end
 
 def NEW_CONF_ROBOT(q_near, q_rand, discretisationsteps, delta_q=None):
@@ -89,7 +90,7 @@ def NEW_CONF_ROBOT(q_near, q_rand, discretisationsteps, delta_q=None):
     return q_end
 
 def VALID_EDGE(q_new, q_goal, discretisationsteps):
-    return np.linalg.norm(q_goal - NEW_CONF_ROBOT(q_new, q_goal, discretisationsteps)) < 1e-3
+    return np.linalg.norm(q_goal - NEW_CONF_CUBE(q_new, q_goal, discretisationsteps)) < 1e-3
 
 def getpath(G):
     path = []
@@ -100,6 +101,16 @@ def getpath(G):
     path = [G[0][1]] + path
     return path
 
+def plot(positions):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    positions = np.array(positions)
+    ax.scatter(positions[:,0], positions[:,1], positions[:,2], c='r', marker='o')
+    ax.set_xlabel('X Label')
+    ax.set_ylabel('Y Label')
+    ax.set_zlabel('Z Label')
+    plt.show()
+
 
 #returns a collision free path from qinit to qgoal under grasping constraints
 #the path is expressed as a list of configurations
@@ -108,21 +119,22 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     discretisationsteps_newconf = 200 
     discretisationsteps_validedge = 200 
     k = 1000
-    delta_q = 3.0
+    delta_q = 0.2
     
     G = [(None,np.array(cubeplacementq0), np.array(qinit))]
     rotation = cubeplacementq0.rotation
     sampled_positions = set()
+    cube_positions = []
 
     x_range = (0, 0.5) 
     y_range = (-0.2, 0.2)
     z_range = (0.93, 1.2)
     
     for iteration in range(k):
-
         valid_configuration = False
+        cube_positions.append(cubeplacementq0.translation)
 
-        while True: 
+        while True:
         # Sampling configurations for the cube 
             cube_x_rand = np.random.uniform(*x_range)
             cube_y_rand = np.random.uniform(*y_range)
@@ -142,13 +154,8 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
                 if not success:
                     print("Valid configuration found, breaking out of the loop...")
                     valid_configuration = True
+                    cube_positions.append(cube_rand_translation)
                     break
-                else:
-                    print("Valid configuration not found, continuing to sample...")
-                    # Change the range of the sampling space 
-                    x_range = (min(0, cube_x_rand - 0.1), max(0.5, cube_x_rand + 0.1))
-                    y_range = (min(-0.2, cube_y_rand - 0.1), max(0.2, cube_y_rand + 0.1))   
-                    z_range = (min(0.93, cube_z_rand - 0.1), max(1.2, cube_z_rand + 0.1))
 
         if not valid_configuration:
             continue
@@ -157,6 +164,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         cube_q_near_idx = NEAREST_VERTEX_CUBE_Q(G, cube_q_rand)
         cube_q_near = G[cube_q_near_idx][1]
         cube_q_near = pin.SE3(cube_q_near)
+        cube_positions.append(cube_q_near.translation)
         
         q_near_idx = NEAREST_VERTEX_ROBOT_Q(G, q_rand)
         q_near, success = computeqgrasppose(robot, q_rand, cube, cube_q_near, viz)
@@ -167,6 +175,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         cube_q_new = NEW_CONF_CUBE(cube_q_near, cube_q_rand, discretisationsteps_newconf, delta_q)
         print(f"New cube configuration: {cube_q_new}")
         cube_q_new = pin.SE3(cube_q_new)
+        
 
         q_new, success = computeqgrasppose(robot, q_near, cube, cube_q_new, viz)
         print(f"New robot configuration: {q_new}, success: {success}")
@@ -174,17 +183,22 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         if success:
             print("New configuration is in collsion, continuing to sample...")
             continue
-
+        cube_positions.append(cube_q_new.translation)
     # Return the closest configuration q such that the path q => q_new is the longest 
     # along the linear interpolation (q_new,qgoal) that is collision free and of length <  delta_q
         print("Adding edge and vertex...")
         ADD_EDGE_AND_VERTEX(G, q_near_idx, np.array(cube_q_new), np.array(q_new))
-        if VALID_EDGE(q_new, qgoal, discretisationsteps_validedge):
+        print("Checking for valid edge...")
+        if VALID_EDGE(cube_q_new, cubeplacementqgoal, discretisationsteps_validedge):
+            cube_positions.append(cubeplacementq0.translation)
             print("Path found!")
             ADD_EDGE_AND_VERTEX(G, len(G)-1, np.array(cubeplacementqgoal), np.array(qgoal))
             # Reconstruct the path from qinit to qgoal
             path = getpath(G)
+            plot(cube_positions)
             return path
+        print("Valid edge not found, continuing to sample...")
+    
     print("Path not found!")
     return []
                                              

@@ -54,7 +54,7 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
         qcurrent = pin.integrate(robot.model, qcurrent, v_q * 1e-2)
         #updatevisuals(viz, robot, cube, qcurrent)
     
-    updatevisuals(viz, robot, cube, qcurrent) 
+    #updatevisuals(viz, robot, cube, qcurrent) 
     return qcurrent, collision(robot, qcurrent)
     # distance between qcurrent and the goal < epsilon
             
