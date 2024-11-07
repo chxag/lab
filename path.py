@@ -119,7 +119,9 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     z_range = (0.93, 1.2)
     
     for iteration in range(k):
-        
+
+        valid_configuration = False
+
         while True: 
         # Sampling configurations for the cube 
             cube_x_rand = np.random.uniform(*x_range)
@@ -138,14 +140,20 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
                 print(f"Sampled configuration: {q_rand}, success: {success}")
             
                 if not success:
+                    print("Valid configuration found, breaking out of the loop...")
+                    valid_configuration = True
                     break
-                else: 
+                else:
+                    print("Valid configuration not found, continuing to sample...")
                     # Change the range of the sampling space 
                     x_range = (min(0, cube_x_rand - 0.1), max(0.5, cube_x_rand + 0.1))
                     y_range = (min(-0.2, cube_y_rand - 0.1), max(0.2, cube_y_rand + 0.1))   
                     z_range = (min(0.93, cube_z_rand - 0.1), max(1.2, cube_z_rand + 0.1))
-        
 
+        if not valid_configuration:
+            continue
+        
+        print("Proceeding with path planning...")
         cube_q_near_idx = NEAREST_VERTEX_CUBE_Q(G, cube_q_rand)
         cube_q_near = G[cube_q_near_idx][1]
         cube_q_near = pin.SE3(cube_q_near)
@@ -161,17 +169,24 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         cube_q_new = pin.SE3(cube_q_new)
 
         q_new, success = computeqgrasppose(robot, q_near, cube, cube_q_new, viz)
+        print(f"New robot configuration: {q_new}, success: {success}")
+
+        if success:
+            print("New configuration is in collsion, continuing to sample...")
+            continue
 
     # Return the closest configuration q such that the path q => q_new is the longest 
     # along the linear interpolation (q_new,qgoal) that is collision free and of length <  delta_q
+        print("Adding edge and vertex...")
         ADD_EDGE_AND_VERTEX(G, q_near_idx, np.array(cube_q_new), np.array(q_new))
         if VALID_EDGE(q_new, qgoal, discretisationsteps_validedge):
             print("Path found!")
             ADD_EDGE_AND_VERTEX(G, len(G)-1, np.array(cubeplacementqgoal), np.array(qgoal))
-    
-    # Reconstruct the path from qinit to qgoal
-    path = getpath(G)
-    return path
+            # Reconstruct the path from qinit to qgoal
+            path = getpath(G)
+            return path
+    print("Path not found!")
+    return []
                                              
 
 def displaypath(robot,path,dt,viz):
