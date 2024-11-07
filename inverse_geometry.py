@@ -26,8 +26,8 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
 
         left_hand = robot.model.getFrameId(LEFT_HAND)
         right_hand = robot.model.getFrameId(RIGHT_HAND)
-        left_hook = robot.model.getFrameId(LEFT_HOOK)
-        right_hook = robot.model.getFrameId(RIGHT_HOOK)
+#         left_hook = robot.model.getFrameId(LEFT_HOOK)
+#         right_hook = robot.model.getFrameId(RIGHT_HOOK)
 
     #     print(left_hook, right_hook, left_hand, right_hand)
 
@@ -41,6 +41,9 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
 
         error_left = oMleft_hand.inverse()*oMleft_hook
         error_right = oMright_hand.inverse()*oMright_hook
+        
+        if np.linalg.norm(error_left) < EPSILON and np.linalg.norm(error_right) < EPSILON:
+            return qcurrent, True
 
         error_left_vec = pin.log(error_left).vector
         error_right_vec = pin.log(error_right).vector
@@ -57,16 +60,15 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
 
 #         if not collision(robot, qcurrent):
         qcurrent = pin.integrate(robot.model, qcurrent, v_q * 1e-2)
-        qcurrent = projecttojointlimits(robot, qcurrent)
-        
-        if not collision(robot, qcurrent):
-            continue
-        
-#         updatevisuals(viz, robot, cube, qcurrent)
     
-#     print ("TODO: implement me")
-    updatevisuals(viz, robot, cube, qcurrent)
-    return qcurrent, collision(robot, qcurrent)
+#         qcurrent = projecttojointlimits(robot, qcurrent)
+        
+#         if not collision(robot, qcurrent):
+# #             setcubeplacement(robot, cube, cubetarget)
+# #             updatevisuals(viz, robot, cube, qcurrent)
+#             continue
+#     updatevisuals(viz,robot, cube, qcurrent)
+    return qcurrent, True
 # and np.linalg.norm(cubetarget.translation - qcurrent[:3]) < EPSILON
     # distance between qcurrent and the goal < epsilon
 #     return robot.q0, False
