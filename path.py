@@ -70,10 +70,16 @@ def NEW_CONF_CUBE(q_near, q_rand, discretisationsteps, delta_q=None):
         q_end = lerp(np.array(q_near), np.array(q_rand), delta_q/dist)
         dist = delta_q
     dt = dist / discretisationsteps
+    last_valid = q_near
     for i in range(1, discretisationsteps):
         q_lerp = lerp(np.array(q_near), np.array(q_end), (dt*i)/dist)
         if cube_collision(pin.SE3(q_lerp)):
-            return lerp(np.array(q_near), np.array(q_end), (dt*(i-1))/dist)
+            last_valid = lerp(np.array(q_near), np.array(q_end), (dt*(i-1))/dist)
+            while True:
+                q_grasp, success = computeqgrasppose(robot, q_near, cube, pin.SE3(last_valid), viz)
+                if not robot_collision(q_grasp):
+                    return last_valid
+                last_valid = lerp(np.array(q_near), np.array(last_valid), (dt*(i-1))/dist)       
     return q_end
 
 def NEW_CONF_ROBOT(q_near, q_rand, discretisationsteps, delta_q=None):
@@ -102,15 +108,15 @@ def getpath(G):
     path = [G[0][1]] + path
     return path
 
-def shortcut(path):
-    for i, q in enumerate(path):
-        for j in reversed(range(i+1, len(path))):
-            q2 = path[j]
-            q_new = NEW_CONF(q,q2,discretisationsteps_newconf, delta_q = delta_q)
-            if VALID_EDGE(q,q2,discretisationsteps_validedge):
-                path = path[:i+1]+path[j:]
-                return path
-    return path
+# def shortcut(path):
+#     for i, q in enumerate(path):
+#         for j in reversed(range(i+1, len(path))):
+#             q2 = path[j]
+#             q_new = NEW_CONF(q,q2,discretisationsteps_newconf, delta_q = delta_q)
+#             if VALID_EDGE(q,q2,discretisationsteps_validedge):
+#                 path = path[:i+1]+path[j:]
+#                 return path
+#     return path
 
 #returns a collision free path from qinit to qgoal under grasping constraints
 #the path is expressed as a list of configurations
@@ -119,7 +125,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     discretisationsteps_newconf = 200 
     discretisationsteps_validedge = 200 
     k = 1000
-    delta_q = .1
+    delta_q = 0.1
     
     G = [(None,cubeplacementq0, qinit)]
     
@@ -175,20 +181,14 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         cube_q_new = NEW_CONF_CUBE(cube_q_near, cube_q_rand, discretisationsteps_newconf, delta_q)
         cube_q_new = pin.SE3(cube_q_new)
         
+        
         q_new, success = computeqgrasppose(robot, q_rand, cube, cube_q_new, viz)
+        print(f"Checking VALID_EDGE for q_new: {q_new} and {qgoal}")
+        print(np.linalg.norm(qgoal - NEW_CONF_ROBOT(q_new, qgoal, discretisationsteps_validedge)))
         if not robot_collision(q_new):
-#             ADD_EDGE_AND_VERTEX(G, q_near_index, np.array(cube_q_new), np.array(q_new))
             ADD_EDGE_AND_VERTEX(G, q_near_index, cube_q_new, q_new)
-           
-        #compute grasppose for the new cube config
-    # Add the edge and vertex from q_near to q_new to the tree G
-#         break
-
-    # Return the closest configuration q such that the path q => q_new is the longest 
-    # along the linear interpolation (q_new,qgoal) that is collision free and of length <  delta_q
             if VALID_EDGE(q_new, qgoal, discretisationsteps_validedge):
                 print ("Path found!")
-#                 ADD_EDGE_AND_VERTEX(G,len(G)-1, np.array(cubeplacementqgoal), np.array(qgoal))
                 ADD_EDGE_AND_VERTEX(G,len(G)-1, cubeplacementqgoal, qgoal)
                 print(getpath(G))
                 return getpath(G)
@@ -229,11 +229,11 @@ def displaypath(robot,path,dt,viz):
         viz.display(q)
         time.sleep(dt)
 
-def plotpaths(paths, colq_end,ors = ['r','c']):
-    plotConfigurationSpace(hcol,hfree)
-    for path, color in zip(paths,colors):
-        patharray = np.array(path)
-        plt.plot(patharray[:,0],patharray[:,1],color,lw=3)
+# def plotpaths(paths, colq_end,ors = ['r','c']):
+#     plotConfigurationSpace(hcol,hfree)
+#     for path, color in zip(paths,colors):
+#         patharray = np.array(path)
+#         plt.plot(patharray[:,0],patharray[:,1],color,lw=3)
 
 if __name__ == "__main__":
     from tools import setupwithmeshcat
