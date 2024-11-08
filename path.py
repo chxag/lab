@@ -24,17 +24,10 @@ def cube_collision(oMf):
     dist_obst = pin.computeDistance(cube.collision_model, cube.collision_data, 1).min_distance
     return dist_obst < 0.02
 
-def robot_collision(q):
-    pin.updateGeometryPlacements(robot.model, robot.data, robot.collision_model, robot.collision_data, q)
-    return pin.computeCollisions(robot.collision_model, robot.collision_data, False)
-
 def distance(q1, q2):
     q1 = pin.SE3(q1)
     q2 = pin.SE3(q2)
     return np.linalg.norm(q2.translation - q1.translation)
-
-def distance_robot(q1, q2):
-    return np.linalg.norm(q2 - q1)
 
 def robot_distance(q1, q2):
     return np.linalg.norm(q2-q1)
@@ -97,12 +90,14 @@ def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=Non
                 viz.display(robot_q)
 
                 if not cube_collision(q_lerp) and not collision(robot, robot_q):
-                    last_valid = q_lerp
-                    print(f"Backtracking to last valid at step {i} with q = {last_valid}")
-                    break 
-                if np.array_equal(last_valid, q_lerp):
                     print(f"Backtracking to initial at step {i} with q = {q_near}")
                     return q_near, robot_q
+#                     last_valid = q_lerp
+#                     print(f"Backtracking to last valid at step {i} with q = {last_valid}")
+#                     break 
+#                 if np.array_equal(last_valid, q_lerp):
+#                     print(f"Backtracking to initial at step {i} with q = {q_near}")
+#                     return q_near, robot_q
         
         #last_valid = q_lerp
   
@@ -144,22 +139,24 @@ def getpath(G):
     path = [G[0][2]] + path
     return path
 
-# def shortcut(path):
-#     for i, q in enumerate(path):
-#         for j in reversed(range(i+1, len(path))):
-#             q2 = path[j]
-#             q_new = NEW_CONF(q,q2,discretisationsteps_newconf, delta_q = delta_q)
-#             if VALID_EDGE(q,q2,discretisationsteps_validedge):
-#                 path = path[:i+1]+path[j:]
-#                 return path
-#     return path
+def shortcut(path):
+    for i, q in enumerate(path):
+        for j in reversed(range(i+1, len(path))):
+            q2 = path[j]
+            q_new = NEW_CONF(q,q2,discretisationsteps_newconf, delta_q = delta_q)
+            if VALID_EDGE(q,q2,discretisationsteps_validedge):
+                path = path[:i+1]+path[j:]
+                return path
+    return path
 
+#returns a collision free path from qinit to qgoal under grasping constraints
+#the path is expressed as a list of configurations
 def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     #TODO
     discretisationsteps_newconf = 200 
     discretisationsteps_validedge = 200 
     k = 1000
-    delta_q = 0.1
+    delta_q = .1
     
     G = [(None,np.array(cubeplacementq0), np.array(qinit))]
     
@@ -168,10 +165,11 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     translation_goal = cubeplacementqgoal.translation
         
     sampled_positions = set()
+    goal_bias = 0.1
 
     x_range = (translation_init[0], translation_goal[0])
     y_range = (translation_init[1], translation_goal[1])
-    z_range = (translation_init[2], translation_goal[2] + 1)
+    z_range = (translation_init[2], translation_goal[2] + 0.6)
 
 #     x_range = (0, 0.5) 
 #     y_range = (-0.2, 0.2)
@@ -181,7 +179,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         
         # q_rand = RAND_CONF()
         while True: 
-
+        # Sampling configurations for the cube 
             cube_x_rand = np.random.uniform(*x_range)
             cube_y_rand = np.random.uniform(*y_range)
             cube_z_rand = np.random.uniform(*z_range) 
@@ -197,7 +195,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
                 # Generating valid pose for the randomly sampled cube position 
                 q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
             
-                if not robot_collision(q_rand):
+                if not collision(robot, q_rand):
                     break
 #                 else: 
 #                     # Change the range of the sampling space 
@@ -211,7 +209,9 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         
         q_near_index = NEAREST_VERTEX_ROBOT_Q(G, q_rand)
         q_near, success = computeqgrasppose(robot, q_rand, cube, cube_q_near, viz)
-
+        
+    # Return the closest configuration q_new such that the path q_near => q_new is the longest 
+    # along the linear interpolation (q_near,q_rand) that is collision free and of length <  delta_q
         print("q_near", q_near)
         print("cube_q_near", cube_q_near)
         print("cube_q_rand", cube_q_rand)
@@ -220,14 +220,22 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         cube_q_new = pin.SE3(cube_q_new)
         
         ADD_EDGE_AND_VERTEX(G, q_near_index, np.array(cube_q_new), np.array(robot_q_new))
-        
+           
+        #compute grasppose for the new cube config
+    # Add the edge and vertex from q_near to q_new to the tree G
+#         break
+
+    # Return the closest configuration q such that the path q => q_new is the longest 
+    # along the linear interpolation (q_new,qgoal) that is collision free and of length <  delta_q
         if VALID_EDGE(robot_q_new, cube_q_new, cubeplacementqgoal, discretisationsteps_validedge):
             print ("Path found!")
+#                 ADD_EDGE_AND_VERTEX(G,len(G)-1, np.array(cubeplacementqgoal), np.array(qgoal))
             ADD_EDGE_AND_VERTEX(G,len(G)-1, np.array(cubeplacementqgoal), np.array(qgoal))
             print(getpath(G))
             return getpath(G)
     
     print("path not found")
+    # Reconstruct the path from qinit to qgoal
     path = []
     print(path)
     return path
@@ -244,12 +252,13 @@ def displayedge (q0, q1, vel=2.):
     print(q1)
     for i in range(nframes-1):
         t = float(i) / nframes
-        print(t)
         interp = lerp(q0, q1, t)
-        viz.display(interp)
+#         viz.display(interp)
+#         setcubeplacement(robot, cube, q0)
         updatevisuals(viz, robot, cube, interp)
         sleep(f)
-    viz.display(q1)
+#     viz.display(q1)
+#     setcubeplacement(robot, cube, cube_q1)
     updatevisuals(viz, robot, cube, q1)
     sleep(f)
                                             
@@ -260,11 +269,11 @@ def displaypath(robot,path,dt,viz):
 #         viz.display(q)
 #         time.sleep(dt)
 
-# def plotpaths(paths, colq_end,ors = ['r','c']):
-#     plotConfigurationSpace(hcol,hfree)
-#     for path, color in zip(paths,colors):
-#         patharray = np.array(path)
-#         plt.plot(patharray[:,0],patharray[:,1],color,lw=3)
+def plotpaths(paths, colq_end,ors = ['r','c']):
+    plotConfigurationSpace(hcol,hfree)
+    for path, color in zip(paths,colors):
+        patharray = np.array(path)
+        plt.plot(patharray[:,0],patharray[:,1],color,lw=3)
 
 if __name__ == "__main__":
     from tools import setupwithmeshcat
@@ -282,6 +291,8 @@ if __name__ == "__main__":
         print ("error: invalid initial or end configuration")
             
     path = computepath(q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET)
+    
+#     plotpaths([path])
     
     displaypath(robot,path, dt=0.5,viz=viz) #you ll probably want to lower dt
     
