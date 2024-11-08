@@ -126,7 +126,7 @@ def getpath(G):
 #                 path = path[:i+1]+path[j:]
 #                 return path
 #     return path
-s
+
 def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     #TODO
     discretisationsteps_newconf = 200 
