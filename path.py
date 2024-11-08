@@ -101,8 +101,6 @@ def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=Non
 
 def VALID_EDGE(robot_q_new, q_new, q_goal, discretisationsteps):
     cube_q, robot_q = NEW_CONF_CUBE(robot_q_new, q_new, q_goal, discretisationsteps)
-    print(np.linalg.norm(np.array(q_goal) - np.array(cube_q)))
-
     return np.linalg.norm(np.array(q_goal) - np.array(cube_q)) < 2e-1
 
 def getpath(G):
@@ -162,10 +160,6 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         
         q_near_index = NEAREST_VERTEX_ROBOT_Q(G, q_rand)
         q_near, success = computeqgrasppose(robot, q_rand, cube, cube_q_near, viz)
-
-        print("q_near", q_near)
-        print("cube_q_near", cube_q_near)
-        print("cube_q_rand", cube_q_rand)
         
         cube_q_new, robot_q_new = NEW_CONF_CUBE(q_near, cube_q_near, cube_q_rand, discretisationsteps_newconf, delta_q)
         cube_q_new = pin.SE3(cube_q_new)
@@ -175,13 +169,10 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         if VALID_EDGE(robot_q_new, cube_q_new, cubeplacementqgoal, discretisationsteps_validedge):
             print ("Path found!")
             ADD_EDGE_AND_VERTEX(G,len(G)-1, np.array(cubeplacementqgoal), np.array(qgoal))
-            print(getpath(G))
             return getpath(G)
     
-    print("path not found")
-    path = []
-    print(path)
-    return path
+    print("Path not found")
+    return []
 
 def displayedge (q0, q1, vel=2.):
     from math import ceil
@@ -191,8 +182,6 @@ def displayedge (q0, q1, vel=2.):
     duration = dist / vel
     nframes = ceil(48. * duration)
     f = 1. / 48.
-    print(q0)
-    print(q1)
     for i in range(nframes-1):
         t = float(i) / nframes
         interp = lerp(q0, q1, t)
