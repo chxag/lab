@@ -132,7 +132,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     discretisationsteps_newconf = 200 
     discretisationsteps_validedge = 200 
     k = 1000
-    delta_q = .1
+    delta_q = 0.1
     
     G = [(None,np.array(cubeplacementq0), np.array(qinit))]
     
