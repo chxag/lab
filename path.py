@@ -63,9 +63,9 @@ def ADD_EDGE_AND_VERTEX(G,parent, cube_placement, robot_q):
 def lerp(q0,q1,t):    
     return q0 * (1 - t) + q1 * t 
 
-def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=None, max_backtrack_steps=10):
+def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=None):
     q_end = q_rand.copy()
-    robot_q_end, success = computeqgrasppose(robot, robot_q_near, cube, q_end, viz)
+    robot_q, success = computeqgrasppose(robot, robot_q_near, cube, q_end, viz)
     dist = distance(q_near, q_rand)
 
     if delta_q is not None and dist > delta_q:
@@ -74,33 +74,38 @@ def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=Non
 
     dt = dist / discretisationsteps
     last_valid = q_near
-
+    last_valid = pin.SE3(last_valid)
+    
+    if not cube_collision(last_valid) and not collision(robot, robot_q):
+        print(f"no Collision detected at step 0 with q = {last_valid}")
+        return last_valid, robot_q
+        
+    
     for i in range(1, discretisationsteps):
-        q_lerp = lerp(np.array(q_near), np.array(q_end), (dt * i) / dist)
-        q_lerp = pin.SE3(q_lerp)
-        robot_q_new, success = computeqgrasppose(robot, robot_q_near, cube, q_lerp, viz)
+        last_valid = lerp(np.array(q_near), np.array(last_valid), dt * (i - 1) / dist)
+        last_valid = pin.SE3(last_valid)
+        print(f"Step {i}: q = {last_valid}")
 
-        if cube_collision(q_lerp) or robot_collision(robot_q_new):
-            # Backtrack to last valid configuration within a limit
-            for _ in range(max_backtrack_steps):
-                last_valid = lerp(np.array(q_near), np.array(last_valid), (dt * (i - 1)) / dist)
-                robot_q_new, success = computeqgrasppose(robot, robot_q_near, cube, pin.SE3(last_valid), viz)
-                viz.display(robot_q_new)
+        robot_q, success = computeqgrasppose(robot, robot_q_near, cube, last_valid, viz)
+        viz.display(robot_q)
 
-                if not cube_collision(pin.SE3(last_valid)) and not robot_collision(robot_q_new):
-                    return last_valid, robot_q_new
-            # If backtracking fails, return to initial q_near configuration
-            return q_near, robot_q_near
-        else:
-            last_valid = q_lerp
-
-    return q_end, robot_q_end
-
+        if not cube_collision(last_valid) and not collision(robot, robot_q):
+            print(f"no Collision detected at step {i} with q = {last_valid}")
+    #             last_valid = lerp(np.array(q_near), np.array(last_valid), dt * (i - 1) / dist)
+    #             last_valid = pin.SE3(last_valid)
+            robot_q, success = computeqgrasppose(robot, robot_q_near, cube, last_valid, viz)
+    #             viz.display(robot_q)
+            return last_valid, robot_q
+        
+#     print(f"No collision detected, returning q_end = {q_end, robot_q_end}")
+    return q_end, robot_q
 
 
 def VALID_EDGE(robot_q_new, q_new, q_goal, discretisationsteps):
-    print("valid edge")
     cube_q, robot_q = NEW_CONF_CUBE(robot_q_new, q_new, q_goal, discretisationsteps)
+    print(np.linalg.norm(np.array(q_goal) - np.array(cube_q)) < 1e-3)
+    print(f"VALID_EDGE: q_new={cube_q}, q_goal={q_goal}, new_conf={robot_q}, valid={np.linalg.norm(np.array(q_goal) - np.array(cube_q)) < 1e-3}")
+
     return np.linalg.norm(np.array(q_goal) - np.array(cube_q)) < 1e-3
 
 def getpath(G):
@@ -131,7 +136,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     k = 1000
     delta_q = .1
     
-    G = [(None,cubeplacementq0, qinit)]
+    G = [(None,np.array(cubeplacementq0), np.array(qinit))]
     
     rotation_init = cubeplacementq0.rotation
     translation_init = cubeplacementq0.translation
@@ -142,7 +147,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
 
     x_range = (translation_init[0], translation_goal[0])
     y_range = (translation_init[1], translation_goal[1])
-    z_range = (translation_init[2], translation_goal[2] + 0.2)
+    z_range = (translation_init[2], translation_goal[2] + 0.6)
 
 #     x_range = (0, 0.5) 
 #     y_range = (-0.2, 0.2)
@@ -185,11 +190,12 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         
     # Return the closest configuration q_new such that the path q_near => q_new is the longest 
     # along the linear interpolation (q_near,q_rand) that is collision free and of length <  delta_q
+        print("q_near", q_near)
+        print("cube_q_near", cube_q_near)
+        print("cube_q_rand", cube_q_rand)
         
         cube_q_new, robot_q_new = NEW_CONF_CUBE(q_near, cube_q_near, cube_q_rand, discretisationsteps_newconf, delta_q)
         cube_q_new = pin.SE3(cube_q_new)
-        print("new cube q", cube_q_new)
-        print("new robot q", robot_q_new)
         
         ADD_EDGE_AND_VERTEX(G, q_near_index, np.array(cube_q_new), np.array(robot_q_new))
            
@@ -262,7 +268,7 @@ if __name__ == "__main__":
     
     if not(successinit and successend):
         print ("error: invalid initial or end configuration")
-    
+            
     path = computepath(q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET)
     
 #     plotpaths([path])
