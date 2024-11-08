@@ -153,7 +153,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
  
                 q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
 
-                if robot_collision(robot, q_rand):
+                if not robot_collision(robot, q_rand):
                     break 
                     
         cube_q_near_index = NEAREST_VERTEX_CUBE_Q(G, cube_q_rand)
