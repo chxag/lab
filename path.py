@@ -33,6 +33,9 @@ def distance(q1, q2):
     q2 = pin.SE3(q2)
     return np.linalg.norm(q2.translation - q1.translation)
 
+def distance_robot(q1, q2):
+    return np.linalg.norm(q2 - q1)
+
 def robot_distance(q1, q2):
     return np.linalg.norm(q2-q1)
 
@@ -112,9 +115,9 @@ def getpath(G):
     path = []
     node = G[-1]
     while node[0] is not None:
-        path = [node[1]] + path
+        path = [node[2]] + path
         node = G[node[0]]
-    path = [G[0][1]] + path
+    path = [G[0][2]] + path
     return path
 
 def shortcut(path):
@@ -222,7 +225,7 @@ def displayedge (q0, q1, vel=2.):
     from math import ceil
     from time import sleep
     from setup_meshcat import updatevisuals
-    dist = distance(q0,q1)
+    dist = robot_distance(q0,q1)
     duration = dist / vel
     nframes = ceil(48. * duration)
     f = 1. / 48.
@@ -231,10 +234,10 @@ def displayedge (q0, q1, vel=2.):
     for i in range(nframes-1):
         t = float(i) / nframes
         print(t)
-        interp = lerp(q0[:3], q1[:3], t)
-        viz.display(pin.SE3(interp))
+        interp = lerp(q0, q1, t)
+        viz.display(interp)
 #         setcubeplacement(robot, cube, q0)
-        updatevisuals(viz, robot, cube, pin.SE3(interp))
+        updatevisuals(viz, robot, cube, interp)
         sleep(f)
     viz.display(q1)
 #     setcubeplacement(robot, cube, cube_q1)
