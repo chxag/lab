@@ -9,7 +9,7 @@ Created on Wed Sep  6 15:32:51 2023
 import pinocchio as pin 
 import numpy as np
 from numpy.linalg import pinv,inv,norm,svd,eig
-from tools import collision, getcubeplacement, setcubeplacement, projecttojointlimits
+from tools import collision, getcubeplacement, setcubeplacement, projecttojointlimits, jointlimitsviolated
 from config import LEFT_HOOK, RIGHT_HOOK, LEFT_HAND, RIGHT_HAND, EPSILON
 from config import CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET
 
@@ -53,8 +53,10 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
         v_q = pinv(Jtotal)@error_both
 
         qcurrent = pin.integrate(robot.model, qcurrent, v_q * 1e-2)
-        
 
+        if jointlimitsviolated(robot, qcurrent):
+            qcurrent = projecttojointlimits(robot, qcurrent)
+        
     return qcurrent, True
             
 if __name__ == "__main__":
