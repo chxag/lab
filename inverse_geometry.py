@@ -26,15 +26,9 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
 
         left_hand = robot.model.getFrameId(LEFT_HAND)
         right_hand = robot.model.getFrameId(RIGHT_HAND)
-#         left_hook = robot.model.getFrameId(LEFT_HOOK)
-#         right_hook = robot.model.getFrameId(RIGHT_HOOK)
-
-    #     print(left_hook, right_hook, left_hand, right_hand)
 
         oMleft_hand = robot.data.oMf[left_hand]
         oMright_hand = robot.data.oMf[right_hand]
-
-    #     print(oMleft_hand, oMright_hand)
 
         oMleft_hook = getcubeplacement(cube, LEFT_HOOK)
         oMright_hook = getcubeplacement(cube, RIGHT_HOOK)
@@ -57,10 +51,8 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
         Jtotal = np.vstack((Jleft, Jright))
 
         v_q = pinv(Jtotal)@error_both
-        
+
         qcurrent = pin.integrate(robot.model, qcurrent, v_q * 1e-2)
-    
-#         qcurrent = projecttojointlimits(robot, qcurrent)
         
 
     return qcurrent, True
