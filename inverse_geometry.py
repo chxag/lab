@@ -57,21 +57,13 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
         Jtotal = np.vstack((Jleft, Jright))
 
         v_q = pinv(Jtotal)@error_both
-
-#         if not collision(robot, qcurrent):
+        
         qcurrent = pin.integrate(robot.model, qcurrent, v_q * 1e-2)
     
 #         qcurrent = projecttojointlimits(robot, qcurrent)
         
-#         if not collision(robot, qcurrent):
-# #             setcubeplacement(robot, cube, cubetarget)
-# #             updatevisuals(viz, robot, cube, qcurrent)
-#             continue
-#     updatevisuals(viz,robot, cube, qcurrent)
+
     return qcurrent, True
-# and np.linalg.norm(cubetarget.translation - qcurrent[:3]) < EPSILON
-    # distance between qcurrent and the goal < epsilon
-#     return robot.q0, False
             
 if __name__ == "__main__":
     from tools import setupwithmeshcat

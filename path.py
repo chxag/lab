@@ -24,10 +24,22 @@ def cube_collision(oMf):
     dist_obst = pin.computeDistance(cube.collision_model, cube.collision_data, 1).min_distance
     return dist_obst < 0.02
 
-def robot_collision(q):
-    pin.updateGeometryPlacements(robot.model, robot.data, robot.collision_model, robot.collision_data, q)
-    return pin.computeCollisions(robot.collision_model, robot.collision_data, False)
+def robot_collision(robot, q):
+    pin.forwardKinematics(robot.model, robot.data, q)
+    pin.updateGeometryPlacements(robot.model, robot.data, robot.collision_model, robot.collision_data)
 
+    pin.computeCollisions(robot.collision_model, robot.collision_data, True)
+
+    for collision in robot.collision_data.activeCollisionPairs:
+        collision_dist = pin.computeDistance(robot.collision_model, robot.collision_data, collision).min_distance
+        if collision_dist < 1e-3:
+            return True
+    return False
+
+    # dist_obst = pin.computeDistance(robot.collision_model, robot.collision_data, 1).min_distance
+    # return dist_obst < 1e-3
+
+    
 def distance(q1, q2):
     q1 = pin.SE3(q1)
     q2 = pin.SE3(q2)
@@ -68,72 +80,44 @@ def lerp(q0,q1,t):
 
 def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=None):
     q_end = q_rand.copy()
-    robot_q, success = computeqgrasppose(robot, robot_q_near, cube, q_end, viz)
     dist = distance(q_near, q_rand)
 
     if delta_q is not None and dist > delta_q:
         q_end = lerp(np.array(q_near), np.array(q_rand), delta_q / dist)
         dist = delta_q
-
     dt = dist / discretisationsteps
-    last_valid = q_near
-    # last_valid = pin.SE3(last_valid)
+    last_valid_cube = q_near
+    last_valid_robot = robot_q_near
 
     for  i in range(1, discretisationsteps):
-        q_lerp = lerp(np.array(q_near), np.array(q_end), dt * i / dist)
-        q_lerp = pin.SE3(q_lerp)
-        robot_q, success = computeqgrasppose(robot, robot_q_near, cube, q_lerp, viz)
+        q_lerp_cube = lerp(np.array(q_near), np.array(q_end), (dt * i) / dist)
+        q_lerp_cube = pin.SE3(q_lerp_cube)
+        robot_q, success = computeqgrasppose(robot, robot_q_near, cube, q_lerp_cube, viz)
         viz.display(robot_q)
-        print(f"Step {i}: q = {q_lerp}")
-        if not cube_collision(last_valid) and not collision(robot, robot_q):
-            print(f"no Collision detected at step {i} with q = {last_valid}")
-            last_valid = q_lerp
+        if not cube_collision(q_lerp_cube) and not robot_collision(robot, robot_q):
+            last_valid_cube = q_lerp_cube
+            last_valid_robot = robot_q
         else:
-            print(f"Collision detected at step {i} with q = {q_lerp}")
-            while cube_collision(q_lerp) or collision(robot, robot_q):
-                q_lerp = lerp(np.array(q_near), np.array(last_valid), dt * (i-1) / dist)
-                q_lerp = pin.SE3(q_lerp)
-                robot_q, success = computeqgrasppose(robot, robot_q_near, cube, last_valid, viz)
+            while cube_collision(q_lerp_cube) or robot_collision(robot, robot_q):
+                q_lerp_cube = lerp(np.array(q_near), np.array(last_valid_cube), (dt * (i-1)) / dist)
+                q_lerp_cube = pin.SE3(q_lerp_cube)
+                robot_q, success= computeqgrasppose(robot, robot_q_near, cube, q_lerp_cube, viz)
                 viz.display(robot_q)
 
-                if not cube_collision(q_lerp) and not collision(robot, robot_q):
-                    last_valid = q_lerp
-                    print(f"Backtracking to last valid at step {i} with q = {last_valid}")
-                    break 
-                if np.array_equal(last_valid, q_lerp):
-                    print(f"Backtracking to initial at step {i} with q = {q_near}")
-                    return q_near, robot_q
-        
-        #last_valid = q_lerp
-  
-    # if not cube_collision(last_valid) and not collision(robot, robot_q):
-    #     print(f"no Collision detected at step 0 with q = {last_valid}")
-    #     return last_valid, robot_q
-        
-    
-    # for i in range(1, discretisationsteps):
-    #     last_valid = lerp(np.array(q_near), np.array(last_valid), dt * i / dist)
-    #     last_valid = pin.SE3(last_valid)
-    #     print(f"Step {i}: q = {last_valid}")
-
-    #     robot_q, success = computeqgrasppose(robot, robot_q_near, cube, last_valid, viz)
-    #     viz.display(robot_q)
-
-    #     if not cube_collision(last_valid) and not collision(robot, robot_q):
-    #         print(f"no Collision detected at step {i} with q = {last_valid}")
-
-    #         robot_q, success = computeqgrasppose(robot, robot_q_near, cube, last_valid, viz)
-    #         return last_valid, robot_q
-    print(f"Returning final config at step {discretisationsteps} with q = {q_lerp}")
-    return last_valid, robot_q
-
+                if not cube_collision(q_lerp_cube) and not robot_collision(robot, robot_q):
+                    last_valid_cube = q_lerp_cube
+                    last_valid_robot = robot_q
+                    return last_valid_cube, last_valid_robot
+                if np.array_equal(last_valid_cube, q_near):
+                    return q_near, robot_q_near
+            break
+    return last_valid_cube, last_valid_robot
 
 def VALID_EDGE(robot_q_new, q_new, q_goal, discretisationsteps):
     cube_q, robot_q = NEW_CONF_CUBE(robot_q_new, q_new, q_goal, discretisationsteps)
-    print(np.linalg.norm(np.array(q_goal) - np.array(cube_q)) < 1e-3)
-    print(f"VALID_EDGE: q_new={cube_q}, q_goal={q_goal}, new_conf={robot_q}, valid={np.linalg.norm(np.array(q_goal) - np.array(cube_q)) < 1e-3}")
+    print(np.linalg.norm(np.array(q_goal) - np.array(cube_q)))
 
-    return np.linalg.norm(np.array(q_goal) - np.array(cube_q)) < 1e-3
+    return np.linalg.norm(np.array(q_goal) - np.array(cube_q)) < 2e-1
 
 def getpath(G):
     path = []
@@ -144,20 +128,10 @@ def getpath(G):
     path = [G[0][2]] + path
     return path
 
-# def shortcut(path):
-#     for i, q in enumerate(path):
-#         for j in reversed(range(i+1, len(path))):
-#             q2 = path[j]
-#             q_new = NEW_CONF(q,q2,discretisationsteps_newconf, delta_q = delta_q)
-#             if VALID_EDGE(q,q2,discretisationsteps_validedge):
-#                 path = path[:i+1]+path[j:]
-#                 return path
-#     return path
-
 def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     #TODO
-    discretisationsteps_newconf = 200 
-    discretisationsteps_validedge = 200 
+    discretisationsteps_newconf = 20
+    discretisationsteps_validedge = 20 
     k = 1000
     delta_q = 0.1
     
@@ -169,17 +143,13 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         
     sampled_positions = set()
 
-    x_range = (translation_init[0], translation_goal[0])
-    y_range = (translation_init[1], translation_goal[1])
-    z_range = (translation_init[2], translation_goal[2] + 1)
+    x_range = (translation_init[0], translation_goal[0]+0.5)
+    y_range = (translation_init[1], translation_goal[1]+0.5)
+    z_range = (translation_init[2], translation_goal[2] + 0.5)
 
-#     x_range = (0, 0.5) 
-#     y_range = (-0.2, 0.2)
-#     z_range = (0.93, 1.2)
     
     for iteration in range(k):
         
-        # q_rand = RAND_CONF()
         while True: 
 
             cube_x_rand = np.random.uniform(*x_range)
@@ -193,17 +163,12 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
             
             if position_tuple not in sampled_positions: 
                 sampled_positions.add(position_tuple)
-
-                # Generating valid pose for the randomly sampled cube position 
+ 
                 q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
-            
-                if not robot_collision(q_rand):
-                    break
-#                 else: 
-#                     # Change the range of the sampling space 
-#                     x_range = (min(0, cube_x_rand - 0.1), max(0.5, cube_x_rand + 0.1))
-#                     y_range = (min(-0.2, cube_y_rand - 0.1), max(0.2, cube_y_rand + 0.1))   
-#                     z_range = (min(0.93, cube_z_rand - 0.1), max(1.2, cube_z_rand + 0.1))
+
+                if not robot_collision(robot, q_rand):
+                    break 
+                #     break
                     
         cube_q_near_index = NEAREST_VERTEX_CUBE_Q(G, cube_q_rand)
         cube_q_near = G[cube_q_near_index][1]
