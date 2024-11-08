@@ -25,19 +25,8 @@ def cube_collision(oMf):
     return dist_obst < 0.02
 
 def robot_collision(robot, q):
-    pin.forwardKinematics(robot.model, robot.data, q)
-    pin.updateGeometryPlacements(robot.model, robot.data, robot.collision_model, robot.collision_data)
-
-    pin.computeCollisions(robot.collision_model, robot.collision_data, True)
-
-    for collision in robot.collision_data.activeCollisionPairs:
-        collision_dist = pin.computeDistance(robot.collision_model, robot.collision_data, collision).min_distance
-        if collision_dist < 1e-3:
-            return True
-    return False
-
-    # dist_obst = pin.computeDistance(robot.collision_model, robot.collision_data, 1).min_distance
-    # return dist_obst < 1e-3
+    dist_obst = distanceToObstacle(robot, q)
+    return dist_obst < 0.002
 
     
 def distance(q1, q2):
