@@ -101,7 +101,7 @@ def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=Non
 
 def VALID_EDGE(robot_q_new, q_new, q_goal, discretisationsteps):
     cube_q, robot_q = NEW_CONF_CUBE(robot_q_new, q_new, q_goal, discretisationsteps)
-    return np.linalg.norm(np.array(q_goal) - np.array(cube_q)) < 2e-1
+    return np.linalg.norm(np.array(q_goal) - np.array(cube_q)) < 2e-2
 
 def getpath(G):
     path = []
@@ -169,6 +169,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
         if VALID_EDGE(robot_q_new, cube_q_new, cubeplacementqgoal, discretisationsteps_validedge):
             print ("Path found!")
             ADD_EDGE_AND_VERTEX(G,len(G)-1, np.array(cubeplacementqgoal), np.array(qgoal))
+            print(getpath(G))
             return getpath(G)
     
     print("Path not found")
@@ -203,7 +204,6 @@ if __name__ == "__main__":
     from inverse_geometry import computeqgrasppose
     
     robot, cube, viz = setupwithmeshcat()
-    
     
     q = robot.q0.copy()
     q0,successinit = computeqgrasppose(robot, q, cube, CUBE_PLACEMENT, viz)
