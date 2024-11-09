@@ -58,12 +58,14 @@ def pi(p0, p1, ti):
     di = ti3 - 2* ti2 + ti
     ei = ti3 - ti2
     bi = (2*ti3 - 3*ti2 + 1) * p0 + (3*ti2 - 2*ti3) * p1
-    Ai = np.diag(np.array[di,di,di,ei,ei,ei])
+    Ai = np.zeros((9, 9))
+    Ai[:3, :3] = np.diag([di,di,di])
+    Ai[3:6, 3:6] = np.diag([ei,ei,ei])
     return (Ai, bi)
 
 def jointlimitconstrant(p0, p1, ti):    
-    q_min = robot.model.upperPositionLimit
-    q_max = robot.model.lowerPositionLimit
+    q_max = robot.model.upperPositionLimit
+    q_min = robot.model.lowerPositionLimit
     (Ai, bi) = pi(p0, p1, ti)
     bmin = bi - q_min
     Amin = -Ai
@@ -73,12 +75,12 @@ def jointlimitconstrant(p0, p1, ti):
     b = np.concatenate([bmin, bmax])
     return (A,b)
 
-def stack_joint_limit_constraints(p0, p1,T):
+def stack_joint_limit_constraints(p0, p1,n_steps):
     A = np.zeros((0,9))
     b = np.zeros(0)
 
-    for i in range(1, T):
-        ti = 1. / (T * i)
+    for i in range(1, n_steps):
+        ti = 1. / (n_steps * i)
         Ai, bi = jointlimitconstrant(p0, p1, ti)
         A = np.vstack([A, Ai])
         b = np.concatenate([b, bi])
@@ -91,9 +93,9 @@ def stack_joint_limit_constraints(p0, p1,T):
 def maketraj(q0,q1,T): #TODO compute a real trajectory !
     n_cols = 9
     l = np.zeros(n_cols)
-    
+    n_steps = 48
 
-    cs = [q0] + [np.zeros(3) for _ in range(2)] + [q1]
+    cs = [q0[:3]] +  [np.zeros(3) for _ in range(2)] + [q1[:3]]
     Cs = []
 
     C = np.zeros((3, n_cols))
@@ -116,13 +118,13 @@ def maketraj(q0,q1,T): #TODO compute a real trajectory !
     C[0,0] = 1
     C[1,1] = 1
     C[2,2] = 1
-    
+
     H = np.zeros((n_cols, n_cols))
     hessians = [to_quadratic_form(C, c) for (C, c) in zip(Cs, cs)]
     Hl = [sum(x) for x in zip(*hessians)]
-    H = Hl[0], l = Hl[1]
+    H = Hl[0]; l = Hl[1]
 
-    A,b = stack_joint_limit_constraints(q0, q1, T)
+    A,b = stack_joint_limit_constraints(q0, q1, n_steps)
 
     x = quadprog_solve_qp(H, l, A, b)
 
@@ -147,7 +149,7 @@ if __name__ == "__main__":
     
     q0,successinit = computeqgrasppose(robot, robot.q0, cube, CUBE_PLACEMENT, None)
     qe,successend = computeqgrasppose(robot, robot.q0, cube, CUBE_PLACEMENT_TARGET,  None)
-    path = computepath(robot,cube,None,q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET)
+    #path = computepath(robot,cube,None,q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET)
 
     
     #setting initial configuration
