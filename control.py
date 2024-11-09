@@ -9,6 +9,7 @@ Created on Wed Sep  6 15:32:51 2023
 import numpy as np
 import quadprog
 from bezier import Bezier
+import pinocchio as pin
     
 # in my solution these gains were good enough for all joints but you might want to tune this.
 Kp = 300.               # proportional gain (P of PD)
@@ -90,6 +91,7 @@ def stack_joint_limit_constraints(p0, p1,T):
 def maketraj(q0,q1,T): #TODO compute a real trajectory !
     n_cols = 9
     l = np.zeros(n_cols)
+    
 
     cs = [q0] + [np.zeros(3) for _ in range(2)] + [q1]
     Cs = []
@@ -114,7 +116,7 @@ def maketraj(q0,q1,T): #TODO compute a real trajectory !
     C[0,0] = 1
     C[1,1] = 1
     C[2,2] = 1
-
+    
     H = np.zeros((n_cols, n_cols))
     hessians = [to_quadratic_form(C, c) for (C, c) in zip(Cs, cs)]
     Hl = [sum(x) for x in zip(*hessians)]
