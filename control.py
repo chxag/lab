@@ -10,11 +10,12 @@ import numpy as np
 import pinocchio as pin
 
 from bezier import Bezier
+from config import LEFT_HAND, RIGHT_HAND
 
 from path import computepath
     
 # in my solution these gains were good enough for all joints but you might want to tune this.
-Kp = 189000            # proportional gain (P of PD)
+Kp = 20000          # proportional gain (P of PD)
 Kv = 2 * np.sqrt(Kp)   # derivative gain (D of PD)
 
 
@@ -24,8 +25,26 @@ def controllaw(sim, robot, trajs, tcurrent, cube):
     
     aq = aq_t(tcurrent) + Kp * (q_t(tcurrent) - q) + Kv * (vq_t(tcurrent) - vq)
     
+    fc_value = 55 #think its too week it goes further than the obstacle (no go over obstacle)
+    
+    fc = np.array([0, fc_value, 0, 0, 0, 0])
+    
+    pin.computeJointJacobians(robot.model, robot.data, q)
+    
+    left_hand = robot.model.getFrameId(LEFT_HAND)
+    right_hand = robot.model.getFrameId(RIGHT_HAND)
+    
+    Jleft = pin.computeFrameJacobian(robot.model, robot.data, q, left_hand)
+    print(Jleft)
+    Jright = pin.computeFrameJacobian(robot.model, robot.data, q, right_hand)
+        
+    fcJleft = np.dot(Jleft.T, fc)
+    fcJright = np.dot(Jright.T, fc)
+    
+    fcJ = fcJleft + fcJright
+    
     #TODO 
-    torques = pin.rnea(robot.model, robot.data, q, vq, aq)
+    torques = pin.rnea(robot.model, robot.data, q, vq, aq) + fcJ
     sim.step(torques)
     
     return torques
