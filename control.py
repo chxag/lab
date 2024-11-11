@@ -14,7 +14,7 @@ from bezier import Bezier
 from path import computepath
     
 # in my solution these gains were good enough for all joints but you might want to tune this.
-Kp = 100000            # proportional gain (P of PD)
+Kp = 189000            # proportional gain (P of PD)
 Kv = 2 * np.sqrt(Kp)   # derivative gain (D of PD)
 
 

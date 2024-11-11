@@ -84,7 +84,7 @@ def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=Non
         q_lerp_cube = lerp(np.array(q_near), np.array(q_end), (dt * i) / dist)
         q_lerp_cube = pin.SE3(q_lerp_cube)
         robot_q, success = computeqgrasppose(robot, robot_q_near, cube, q_lerp_cube, viz)
-        # viz.display(robot_q)
+#         viz.display(robot_q)
         if not cube_collision(robot,cube,q_lerp_cube) and not robot_collision(robot, robot_q):
             last_valid_cube = q_lerp_cube
             last_valid_robot = robot_q
@@ -93,7 +93,7 @@ def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=Non
                 q_lerp_cube = lerp(np.array(q_near), np.array(last_valid_cube), (dt * (i-1)) / dist)
                 q_lerp_cube = pin.SE3(q_lerp_cube)
                 robot_q, success= computeqgrasppose(robot, robot_q_near, cube, q_lerp_cube, viz)
-                # viz.display(robot_q)
+#                 viz.display(robot_q)
 
                 if not cube_collision(robot, cube, q_lerp_cube) and not robot_collision(robot, robot_q):
                     last_valid_cube = q_lerp_cube
