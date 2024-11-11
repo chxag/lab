@@ -27,12 +27,18 @@ def coll(q):
 def cube_collision(robot,cube, oMf):
     setcubeplacement(robot, cube, oMf)
     dist_obst = pin.computeDistance(cube.collision_model, cube.collision_data, 1).min_distance
-    return dist_obst < 0.02
+    return dist_obst < 0.03
 
 def robot_collision(robot, q):
     dist_obst = distanceToObstacle(robot, q)
-    return dist_obst < 0.002
+    return dist_obst < 0.0029
 
+def pickupcube(q):
+    rotation_q = q.rotation
+    translation_q = q.translation
+    transition = np.array([translation_q[0], translation_q[1], translation_q[2] + 0.2])
+    cube_q = pin.SE3(rotation_q, transition)
+    return cube_q
     
 def distance(q1, q2):
     q1 = pin.SE3(q1)
@@ -84,7 +90,7 @@ def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=Non
         q_lerp_cube = lerp(np.array(q_near), np.array(q_end), (dt * i) / dist)
         q_lerp_cube = pin.SE3(q_lerp_cube)
         robot_q, success = computeqgrasppose(robot, robot_q_near, cube, q_lerp_cube, viz)
-#         viz.display(robot_q)
+        viz.display(robot_q)
         if not cube_collision(robot,cube,q_lerp_cube) and not robot_collision(robot, robot_q):
             last_valid_cube = q_lerp_cube
             last_valid_robot = robot_q
@@ -93,7 +99,7 @@ def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=Non
                 q_lerp_cube = lerp(np.array(q_near), np.array(last_valid_cube), (dt * (i-1)) / dist)
                 q_lerp_cube = pin.SE3(q_lerp_cube)
                 robot_q, success= computeqgrasppose(robot, robot_q_near, cube, q_lerp_cube, viz)
-#                 viz.display(robot_q)
+                viz.display(robot_q)
 
                 if not cube_collision(robot, cube, q_lerp_cube) and not robot_collision(robot, robot_q):
                     last_valid_cube = q_lerp_cube
@@ -131,38 +137,45 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     translation_goal = cubeplacementqgoal.translation
         
     sampled_positions = set()
-    goal_bias = 0.1
 
     x_range = (translation_init[0], translation_goal[0]+0.5)
     y_range = (translation_init[1], translation_goal[1]+0.5)
-    z_range = (translation_init[2], translation_goal[2] + 0.5)
+    z_range = (translation_init[2], translation_goal[2]+0.5)
 
+    ispickup = True
     
     for iteration in range(k):
         
-        while True: 
-        # Sampling configurations for the cube 
-            cube_x_rand = np.random.uniform(*x_range)
-            cube_y_rand = np.random.uniform(*y_range)
-            cube_z_rand = np.random.uniform(*z_range) 
+        while True:
+            if ispickup:
+                cube_q_rand  = pickupcube(cubeplacementq0) 
+                cube_q_rand_translation = cube_q_rand.translation 
+                position_tuple = (cube_q_rand_translation[0], cube_q_rand_translation[1], cube_q_rand_translation[2])
+                if position_tuple not in sampled_positions:
+                    sampled_positions.add(position_tuple)
+                ispickup = False
+            else:
+                cube_x_rand = np.random.uniform(*x_range)
+                cube_y_rand = np.random.uniform(*y_range)
+                cube_z_rand = np.random.uniform(*z_range) 
 
-            cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
-            cube_q_rand = pin.SE3(rotation_init, cube_rand_translation)
+                cube_rand_translation = np.array([cube_x_rand, cube_y_rand, cube_z_rand])
+                cube_q_rand = pin.SE3(rotation_init, cube_rand_translation)
 
-            position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand)
-            
-            if position_tuple not in sampled_positions:
-                sampled_positions.add(position_tuple)
+                position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand)
+
+                if position_tuple not in sampled_positions:
+                    sampled_positions.add(position_tuple)
  
-                q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
+            q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
 
-                if not robot_collision(robot, q_rand) and not jointlimitsviolated(robot, q_rand):
-                    break
+            if not robot_collision(robot, q_rand) and not jointlimitsviolated(robot, q_rand):
+                break
                     
         cube_q_near_index = NEAREST_VERTEX_CUBE_Q(G, cube_q_rand)
         cube_q_near = G[cube_q_near_index][1]
         cube_q_near = pin.SE3(cube_q_near)
-        
+
         q_near_index = NEAREST_VERTEX_ROBOT_Q(G, q_rand)
         q_near, success = computeqgrasppose(robot, q_rand, cube, cube_q_near, viz)
 
