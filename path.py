@@ -18,6 +18,8 @@ from config import LEFT_HAND, RIGHT_HAND
 from tools import collision, getcubeplacement, setcubeplacement, projecttojointlimits, distanceToObstacle, jointlimitsviolated
 from config import EPSILON
 import time
+    
+robot, cube, viz = setupwithmeshcat()
 
 def coll(q):
     return distanceToObstacle(robot, q) > 0
@@ -67,7 +69,7 @@ def ADD_EDGE_AND_VERTEX(G,parent, cube_placement, robot_q):
 def lerp(q0,q1,t):    
     return q0 * (1 - t) + q1 * t 
 
-def NEW_CONF_CUBE(robot, cube, viz, robot_q_near, q_near, q_rand, discretisationsteps, delta_q=None):
+def NEW_CONF_CUBE(robot_q_near, q_near, q_rand, discretisationsteps, delta_q=None):
     q_end = q_rand.copy()
     dist = distance(q_near, q_rand)
 
@@ -102,8 +104,8 @@ def NEW_CONF_CUBE(robot, cube, viz, robot_q_near, q_near, q_rand, discretisation
             break
     return last_valid_cube, last_valid_robot
 
-def VALID_EDGE(robot, cube, viz, robot_q_new, q_new, q_goal, discretisationsteps):
-    cube_q, robot_q = NEW_CONF_CUBE(robot, cube, viz, robot_q_new, q_new, q_goal, discretisationsteps)
+def VALID_EDGE(robot_q_new, q_new, q_goal, discretisationsteps):
+    cube_q, robot_q = NEW_CONF_CUBE(robot_q_new, q_new, q_goal, discretisationsteps)
     return np.linalg.norm(np.array(q_goal) - np.array(cube_q)) < 2e-2
 
 def getpath(G):
@@ -115,7 +117,7 @@ def getpath(G):
     path = [G[0][2]] + path
     return path
 
-def computepath(robot, cube, viz, qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
+def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     #TODO
     discretisationsteps_newconf = 20
     discretisationsteps_validedge = 20 
@@ -167,14 +169,14 @@ def computepath(robot, cube, viz, qinit,qgoal,cubeplacementq0, cubeplacementqgoa
         if jointlimitsviolated(robot, q_near):
             q_near = projecttojointlimits(robot, q_near)
         
-        cube_q_new, robot_q_new = NEW_CONF_CUBE(robot, cube, viz, q_near, cube_q_near, cube_q_rand, discretisationsteps_newconf, delta_q)
+        cube_q_new, robot_q_new = NEW_CONF_CUBE(q_near, cube_q_near, cube_q_rand, discretisationsteps_newconf, delta_q)
         cube_q_new = pin.SE3(cube_q_new)
         if jointlimitsviolated(robot, robot_q_new):
             projecttojointlimits(robot, robot_q_new)
         
         ADD_EDGE_AND_VERTEX(G, q_near_index, np.array(cube_q_new), np.array(robot_q_new))
 
-        if VALID_EDGE(robot, cube, viz, robot_q_new, cube_q_new, cubeplacementqgoal, discretisationsteps_validedge):
+        if VALID_EDGE(robot_q_new, cube_q_new, cubeplacementqgoal, discretisationsteps_validedge):
             print ("Path found!")
             ADD_EDGE_AND_VERTEX(G,len(G)-1, np.array(cubeplacementqgoal), np.array(qgoal))
             print(getpath(G))
@@ -220,7 +222,7 @@ if __name__ == "__main__":
     if not(successinit and successend):
         print ("error: invalid initial or end configuration")
             
-    path = computepath(robot,cube,viz,q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET)
+    path = computepath(q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET)
     
     displaypath(robot,path, dt=0.5,viz=viz) #you ll probably want to lower dt
     
