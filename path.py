@@ -15,7 +15,7 @@ from config import CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET
 from inverse_geometry import computeqgrasppose
 
 from config import LEFT_HAND, RIGHT_HAND
-from tools import collision, getcubeplacement, setcubeplacement, projecttojointlimits, distanceToObstacle
+from tools import collision, getcubeplacement, setcubeplacement, projecttojointlimits, distanceToObstacle, jointlimitsviolated
 from config import EPSILON
 import time
 
@@ -82,7 +82,7 @@ def NEW_CONF_CUBE(robot, cube, viz, robot_q_near, q_near, q_rand, discretisation
         q_lerp_cube = lerp(np.array(q_near), np.array(q_end), (dt * i) / dist)
         q_lerp_cube = pin.SE3(q_lerp_cube)
         robot_q, success = computeqgrasppose(robot, robot_q_near, cube, q_lerp_cube, viz)
-        #viz.display(robot_q)
+        # viz.display(robot_q)
         if not cube_collision(robot,cube,q_lerp_cube) and not robot_collision(robot, robot_q):
             last_valid_cube = q_lerp_cube
             last_valid_robot = robot_q
@@ -91,7 +91,7 @@ def NEW_CONF_CUBE(robot, cube, viz, robot_q_near, q_near, q_rand, discretisation
                 q_lerp_cube = lerp(np.array(q_near), np.array(last_valid_cube), (dt * (i-1)) / dist)
                 q_lerp_cube = pin.SE3(q_lerp_cube)
                 robot_q, success= computeqgrasppose(robot, robot_q_near, cube, q_lerp_cube, viz)
-                #viz.display(robot_q)
+                # viz.display(robot_q)
 
                 if not cube_collision(robot, cube, q_lerp_cube) and not robot_collision(robot, robot_q):
                     last_valid_cube = q_lerp_cube
@@ -149,13 +149,13 @@ def computepath(robot, cube, viz, qinit,qgoal,cubeplacementq0, cubeplacementqgoa
 
             position_tuple = (cube_x_rand, cube_y_rand, cube_z_rand)
             
-            if position_tuple not in sampled_positions: 
+            if position_tuple not in sampled_positions:
                 sampled_positions.add(position_tuple)
  
                 q_rand, success = computeqgrasppose(robot, qinit, cube, cube_q_rand, viz)
 
-                if not robot_collision(robot, q_rand):
-                    break 
+                if not robot_collision(robot, q_rand) and not jointlimitsviolated(robot, q_rand):
+                    break
                     
         cube_q_near_index = NEAREST_VERTEX_CUBE_Q(G, cube_q_rand)
         cube_q_near = G[cube_q_near_index][1]
@@ -163,9 +163,14 @@ def computepath(robot, cube, viz, qinit,qgoal,cubeplacementq0, cubeplacementqgoa
         
         q_near_index = NEAREST_VERTEX_ROBOT_Q(G, q_rand)
         q_near, success = computeqgrasppose(robot, q_rand, cube, cube_q_near, viz)
+
+        if jointlimitsviolated(robot, q_near):
+            q_near = projecttojointlimits(robot, q_near)
         
         cube_q_new, robot_q_new = NEW_CONF_CUBE(robot, cube, viz, q_near, cube_q_near, cube_q_rand, discretisationsteps_newconf, delta_q)
         cube_q_new = pin.SE3(cube_q_new)
+        if jointlimitsviolated(robot, robot_q_new):
+            projecttojointlimits(robot, robot_q_new)
         
         ADD_EDGE_AND_VERTEX(G, q_near_index, np.array(cube_q_new), np.array(robot_q_new))
 

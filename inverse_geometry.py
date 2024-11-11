@@ -54,8 +54,8 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
 
         qcurrent = pin.integrate(robot.model, qcurrent, v_q * 1e-2)
 
-        if jointlimitsviolated(robot, qcurrent):
-            qcurrent = projecttojointlimits(robot, qcurrent)
+        # if jointlimitsviolated(robot, qcurrent):
+        #     qcurrent = projecttojointlimits(robot, qcurrent)
         
     return qcurrent, True
             
