@@ -153,7 +153,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
                 position_tuple = (cube_q_rand_translation[0], cube_q_rand_translation[1], cube_q_rand_translation[2])
                 if position_tuple not in sampled_positions:
                     sampled_positions.add(position_tuple)
-                ispickup = False
+                sample_higher = False
             else:
                 cube_x_rand = np.random.uniform(*x_range)
                 cube_y_rand = np.random.uniform(*y_range)
