@@ -33,7 +33,7 @@ def robot_collision(robot, q):
     dist_obst = distanceToObstacle(robot, q)
     return dist_obst < 0.0029
 
-def pickupcube(q):
+def sample_cube_higher(q):
     rotation_q = q.rotation
     translation_q = q.translation
     transition = np.array([translation_q[0], translation_q[1], translation_q[2] + 0.2])
@@ -142,13 +142,13 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     y_range = (translation_init[1], translation_goal[1]+0.5)
     z_range = (translation_init[2], translation_goal[2]+0.5)
 
-    ispickup = True
+    sample_higher = True
     
     for iteration in range(k):
         
         while True:
-            if ispickup:
-                cube_q_rand  = pickupcube(cubeplacementq0) 
+            if sample_higher:
+                cube_q_rand  = sample_cube_higher(cubeplacementq0) 
                 cube_q_rand_translation = cube_q_rand.translation 
                 position_tuple = (cube_q_rand_translation[0], cube_q_rand_translation[1], cube_q_rand_translation[2])
                 if position_tuple not in sampled_positions:
