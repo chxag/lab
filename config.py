@@ -33,8 +33,48 @@ RIGHT_HOOK = "RARM_HOOK"
 ROBOT_PLACEMENT= pin.XYZQUATToSE3(np.array([0.,0.,0.85,0.,0.,0.,1.]))
 TABLE_PLACEMENT= pin.SE3(rotate('z',-np.pi/2),np.array([0.8,0.,0.]))
 OBSTACLE_PLACEMENT= pin.SE3(rotate('z',0),np.array([0.43,-0.1,0.94]))
+#original
+
 CUBE_PLACEMENT = pin.SE3(rotate('z', 0.),np.array([0.33, -0.3, 0.93]))
 CUBE_PLACEMENT_TARGET= pin.SE3(rotate('z', 0),np.array([0.4, 0.11, 0.93]))
+
+#tests
+
+# CUBE_PLACEMENT = pin.SE3(rotate('z', 0),np.array([0.44, -0.4, 0.93]))
+# CUBE_PLACEMENT_TARGET= pin.SE3(rotate('z', 0),np.array([0.5, 0.12, 0.93]))
+
+
+# CUBE_PLACEMENT = pin.SE3(rotate('z', 10),np.array([0.44, -0.4, 0.93]))
+# CUBE_PLACEMENT_TARGET= pin.SE3(rotate('z', 10),np.array([0.5, 0.12, 0.93]))
+
+
+# CUBE_PLACEMENT = pin.SE3(rotate('z', -8),np.array([0.2, -0.1, 0.93]))
+# CUBE_PLACEMENT_TARGET= pin.SE3(rotate('z', -3),np.array([0.7, 0.16, 0.93]))
+
+# CUBE_PLACEMENT = pin.SE3(rotate('z', 0.),np.array([0.6, -0.3, 0.93]))
+# CUBE_PLACEMENT_TARGET= pin.SE3(rotate('z', 0),np.array([0.3, 0.2, 0.93]))
+
+
+# CUBE_PLACEMENT = pin.SE3(rotate('z', -4.),np.array([0.6, -0.3, 0.93]))
+# CUBE_PLACEMENT_TARGET= pin.SE3(rotate('z', 3),np.array([0.3, 0.2, 0.93]))
+
+# CUBE_PLACEMENT = pin.SE3(rotate('z', 18),np.array([0.23, -0.2, 0.93]))
+# CUBE_PLACEMENT_TARGET= pin.SE3(rotate('z', -20),np.array([0.65, 0.25, 0.93]))
+
+# CUBE_PLACEMENT = pin.SE3(rotate('z', 0),np.array([0.53, -0.45, 0.93]))
+# CUBE_PLACEMENT_TARGET= pin.SE3(rotate('z', 0),np.array([0.8, 0.19, 0.93]))
+
+
+# CUBE_PLACEMENT = pin.SE3(rotate('z', 5),np.array([0.53, -0.45, 0.93]))
+# CUBE_PLACEMENT_TARGET= pin.SE3(rotate('z', -4),np.array([0.54, 0.19, 0.93]))
+
+
+
+# CUBE_PLACEMENT = pin.SE3(rotate('z', 18),np.array([0.23, -0.2, 0.93]))
+# CUBE_PLACEMENT_TARGET= pin.SE3(rotate('z', -20),np.array([0.65, 0.25, 0.93]))
+
+
+
 
 #do not edit this part unless you know what you are doing
 MODELS_PATH = join(dirname(str(abspath(__file__))), "models") 
