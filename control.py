@@ -83,7 +83,6 @@ if __name__ == "__main__":
         new_path.append(row)
         new_path.append(row)
         new_path.append(row)
-#         new_path.append(row)
     new_path.append(path[n-1])
     new_path.append(path[n-1]) 
     new_path.append(path[n-1])
