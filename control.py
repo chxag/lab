@@ -27,7 +27,9 @@ def controllaw(sim, robot, trajs, tcurrent, cube):
     
     fc_value = -250
     
-    fc = np.array([0, fc_value, 0, 0, 0, 0])
+    fc_value_z = -200
+    
+    fc = np.array([0, fc_value, fc_value_z, 0, 0, 0])
     
     pin.computeJointJacobians(robot.model, robot.data, q)
     
@@ -63,6 +65,7 @@ if __name__ == "__main__":
     from config import CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET    
     from inverse_geometry import computeqgrasppose
     from path import computepath
+    import matplotlib.pyplot as plt
     
     q0,successinit = computeqgrasppose(robot, robot.q0, cube, CUBE_PLACEMENT, None)
     qe,successend = computeqgrasppose(robot, robot.q0, cube, CUBE_PLACEMENT_TARGET,  None)
@@ -83,6 +86,7 @@ if __name__ == "__main__":
         new_path.append(row)
         new_path.append(row)
         new_path.append(row)
+#         new_path.append(row)
     new_path.append(path[n-1])
     new_path.append(path[n-1]) 
     new_path.append(path[n-1])
@@ -115,5 +119,19 @@ if __name__ == "__main__":
         rununtil(controllaw, DT, sim, robot, trajs, tcur, cube)
         tcur += DT
     
+    fig, axs = plt.subplot(4,1,figsize=(10,15))
     
+    positions = np.array(q_of_t)
+    velocities = np.array(vq_of_t)
+    accelerations = vvq_of_t
+    
+    axs[0].plot(positions[:, 0], positions[:, 1], label='Position Trajectory', color='b')
+    axs[0].set_title('Trajectory')
+    axs[0].set_xlabel('X Position')
+    axs[0].set_ylabel('Y Position')
+    axs[0].grid()
+    axs[0].legend()
+    
+    plt.tight_layout()
+    plt.show()
     
