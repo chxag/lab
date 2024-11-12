@@ -13,7 +13,7 @@ from numpy.linalg import pinv
 from tools import setupwithmeshcat
 from config import CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET
 from inverse_geometry import computeqgrasppose
-
+import matplotlib.pyplot as plt
 from config import LEFT_HAND, RIGHT_HAND
 from tools import collision, getcubeplacement, setcubeplacement, projecttojointlimits, distanceToObstacle, jointlimitsviolated
 from config import EPSILON
@@ -123,7 +123,7 @@ def getpath(G):
     path = [G[0][2]] + path
     return path
 
-def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
+def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal, k):
     #TODO
     discretisationsteps_newconf = 20
     discretisationsteps_validedge = 20 
@@ -143,6 +143,7 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     z_range = (translation_init[2], translation_goal[2]+0.5)
 
     sample_higher = True
+    path_found = False
     
     for iteration in range(k):
         
@@ -191,12 +192,13 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
 
         if VALID_EDGE(robot_q_new, cube_q_new, cubeplacementqgoal, discretisationsteps_validedge):
             print ("Path found!")
+            path_found = True
             ADD_EDGE_AND_VERTEX(G,len(G)-1, np.array(cubeplacementqgoal), np.array(qgoal))
             print(getpath(G))
-            return getpath(G)
+            return getpath(G), iteration, path_found
     
     print("Path not found")
-    return []
+    return [], k, path_found
 
 def displayedge (q0, q1, vel=2.):
     from math import ceil
@@ -234,8 +236,30 @@ if __name__ == "__main__":
     
     if not(successinit and successend):
         print ("error: invalid initial or end configuration")
-            
-    path = computepath(q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET)
+    
+    k_values = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000, 3000, 4000, 5000]
+    iterations = []
+    iterations_not_found = []
+
+    for i,k in enumerate(k_values):        
+        path, iteration, path_found = computepath(q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET, k)
+        if path_found == True:
+            iterations.append(i)
+        else:
+            iterations_not_found.append(i)
     
     displaypath(robot,path, dt=0.5,viz=viz) #you ll probably want to lower dt
+
+plt.plot(iterations, [k_values[i] for i in iterations], 'go', label="Path found")
+plt.plot(iterations_not_found, [k_values[i] for i in iterations_not_found], 'ro', label="Path not found")
+plt.ylabel("k_value")
+# plt.ylabel("Iterations")
+plt.xlabel("Iteration at which each k_value found or did not find a path")
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+    
+
     
