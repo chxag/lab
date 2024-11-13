@@ -66,6 +66,8 @@ if __name__ == "__main__":
     from inverse_geometry import computeqgrasppose
     from path import computepath
     import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    import matplotlib.path as mpath
     
     q0,successinit = computeqgrasppose(robot, robot.q0, cube, CUBE_PLACEMENT, None)
     qe,successend = computeqgrasppose(robot, robot.q0, cube, CUBE_PLACEMENT_TARGET,  None)
@@ -115,23 +117,52 @@ if __name__ == "__main__":
     q_of_t, vq_of_t, vvq_of_t = trajs
     
     
+    sampled_points = []
+    
     while tcur < total_time:
+#         t_values = np.linspace(0, tcur, total_time)
+#         sampled_points = np.array([q_of_t(t) for t in t_values])
+        q_t_value = q_of_t(tcur)
+        sampled_points.append(q_t_value)
+        
         rununtil(controllaw, DT, sim, robot, trajs, tcur, cube)
         tcur += DT
     
-    fig, axs = plt.subplot(4,1,figsize=(10,15))
-    
-    positions = np.array(q_of_t)
-    velocities = np.array(vq_of_t)
-    accelerations = vvq_of_t
-    
-    axs[0].plot(positions[:, 0], positions[:, 1], label='Position Trajectory', color='b')
-    axs[0].set_title('Trajectory')
-    axs[0].set_xlabel('X Position')
-    axs[0].set_ylabel('Y Position')
-    axs[0].grid()
-    axs[0].legend()
-    
-    plt.tight_layout()
+    sampled_points = np.array(sampled_points)
+    sampled_points_z = sampled_points[:, 2]
+
+    fig, ax = plt.subplots()
+#     ax.set_aspect('equal')
+
+#     # Define the path for the Bezier curve using the first two dimensions (y, z)
+#     Path = mpath.Path
+#     path_data = [(Path.MOVETO, sampled_points_z[0])]
+#     path_data += [(Path.LINETO, point) for point in sampled_points_z]
+
+#     # Create the path and patch for plotting
+#     codes, verts = zip(*path_data)
+#     bezier_path = mpath.Path(verts, codes)
+#     patch = mpatches.PathPatch(bezier_path, facecolor='none', edgecolor='blue', lw=2)
+#     ax.add_patch(patch)
+
+    # Plot sampled points for reference
+    ax.plot(np.arange(len(sampled_points_z)), sampled_points_z, 'ro--', label='Trajectory Points')
+
+    # Add labels and display the plot
+    ax.legend()
+    ax.set_title("Bezier Trajectory Path")
+    plt.xlabel("Time Step")
+    plt.ylabel("Z")
+    plt.grid()
     plt.show()
     
+    z_values = [point[2] for point in path]
+    
+    plt.plot(z_values, 'ro--', label='Z Values')
+    
+    plt.legend()
+    plt.title("Z Dimension of Reference Path")
+    plt.xlabel("Point Index")
+    plt.ylabel("Z Value")
+    plt.grid(True)
+    plt.show()
