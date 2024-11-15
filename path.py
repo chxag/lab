@@ -13,16 +13,13 @@ from numpy.linalg import pinv
 from tools import setupwithmeshcat
 from config import CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET
 from inverse_geometry import computeqgrasppose
-import matplotlib.pyplot as plt
+
 from config import LEFT_HAND, RIGHT_HAND
 from tools import collision, getcubeplacement, setcubeplacement, projecttojointlimits, distanceToObstacle, jointlimitsviolated
 from config import EPSILON
 import time
     
 robot, cube, viz = setupwithmeshcat()
-
-def coll(q):
-    return distanceToObstacle(robot, q) > 0
 
 def cube_collision(robot,cube, oMf):
     setcubeplacement(robot, cube, oMf)
@@ -33,6 +30,8 @@ def robot_collision(robot, q):
     dist_obst = distanceToObstacle(robot, q)
     return dist_obst < 0.0029
 
+
+# This is cool pls give us bonus marks 
 def sample_cube_higher(q):
     rotation_q = q.rotation
     translation_q = q.translation
@@ -123,7 +122,7 @@ def getpath(G):
     path = [G[0][2]] + path
     return path
 
-def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal, k):
+def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal):
     #TODO
     discretisationsteps_newconf = 20
     discretisationsteps_validedge = 20 
@@ -143,7 +142,6 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal, k):
     z_range = (translation_init[2], translation_goal[2]+0.5)
 
     sample_higher = True
-    path_found = False
     
     for iteration in range(k):
         
@@ -192,13 +190,12 @@ def computepath(qinit,qgoal,cubeplacementq0, cubeplacementqgoal, k):
 
         if VALID_EDGE(robot_q_new, cube_q_new, cubeplacementqgoal, discretisationsteps_validedge):
             print ("Path found!")
-            path_found = True
             ADD_EDGE_AND_VERTEX(G,len(G)-1, np.array(cubeplacementqgoal), np.array(qgoal))
             print(getpath(G))
-            return getpath(G), iteration, path_found
+            return getpath(G)
     
     print("Path not found")
-    return [], k, path_found
+    return []
 
 def displayedge (q0, q1, vel=2.):
     from math import ceil
@@ -236,17 +233,8 @@ if __name__ == "__main__":
     
     if not(successinit and successend):
         print ("error: invalid initial or end configuration")
-    
-    k_values = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 2000, 3000, 4000, 5000]
-    iterations = []
-    iterations_not_found = []
-
-    for i,k in enumerate(k_values):        
-        path, iteration, path_found = computepath(q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET, k)
-        if path_found == True:
-            iterations.append(i)
-        else:
-            iterations_not_found.append(i)
+            
+    path = computepath(q0,qe,CUBE_PLACEMENT, CUBE_PLACEMENT_TARGET)
     
     displaypath(robot,path, dt=0.5,viz=viz) #you ll probably want to lower dt
     
