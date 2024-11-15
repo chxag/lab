@@ -249,17 +249,4 @@ if __name__ == "__main__":
             iterations_not_found.append(i)
     
     displaypath(robot,path, dt=0.5,viz=viz) #you ll probably want to lower dt
-
-plt.plot(iterations, [k_values[i] for i in iterations], 'go', label="Path found")
-plt.plot(iterations_not_found, [k_values[i] for i in iterations_not_found], 'ro', label="Path not found")
-plt.ylabel("k_value")
-# plt.ylabel("Iterations")
-plt.xlabel("Iteration at which each k_value found or did not find a path")
-plt.legend()
-plt.grid(True)
-plt.show()
-
-
-    
-
     
