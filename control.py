@@ -111,19 +111,22 @@ if __name__ == "__main__":
         return q_of_t, vq_of_t, vvq_of_t
     
     #TODO this is just a random trajectory, you need to do this yourself
-    total_time=4. #tried 3 and 5 but taking too long. What does this mean?
+    total_time=4. 
     trajs = maketraj(q0, qe, total_time)   
     
     tcur = 0.
     
     q_of_t, vq_of_t, vvq_of_t = trajs
     
+
     
     while tcur < total_time:
-        
+
         rununtil(controllaw, DT, sim, robot, trajs, tcur, cube)
         tcur += DT
-
+        
+ 
+    
     
 
     
