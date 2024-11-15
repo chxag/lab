@@ -38,7 +38,7 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
         error_left = oMleft_hand.inverse()*oMleft_hook
         error_right = oMright_hand.inverse()*oMright_hook
         
-        if np.linalg.norm(error_left) < EPSILON and np.linalg.norm(error_right) < EPSILON:
+        if np.linalg.norm(np.array(oMleft_hook) - np.array(oMleft_hand)) < 1e-2 and np.linalg.norm(np.array(oMright_hook) - np.array(oMright_hand)) < 1e-2:
             return qcurrent, True
 
         error_left_vec = pin.log(error_left).vector
@@ -55,9 +55,6 @@ def computeqgrasppose(robot, qcurrent, cube, cubetarget, viz=None):
         v_q = pinv(Jtotal)@error_both
 
         qcurrent = pin.integrate(robot.model, qcurrent, v_q * 1e-2)
-
-        # if jointlimitsviolated(robot, qcurrent):
-        #     qcurrent = projecttojointlimits(robot, qcurrent)
         
     return qcurrent, True
             
