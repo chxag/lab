@@ -118,125 +118,12 @@ if __name__ == "__main__":
     
     q_of_t, vq_of_t, vvq_of_t = trajs
     
-    trajectory_points = []
-    trajectory_velocities = []
-    trajectory_accelerations = []
-    time = []
     
     while tcur < total_time:
-        position = q_of_t(tcur)[:3]  # Extracting the x, y, z position
-        
-        position_0 = q_of_t(tcur)
-        velocity = vq_of_t(tcur)
-        acceleration = vvq_of_t(tcur)
-       
-        trajectory_points.append(position_0)
-        trajectory_velocities.append(velocity)
-        trajectory_accelerations.append(acceleration)
-        time.append(tcur)
         
         rununtil(controllaw, DT, sim, robot, trajs, tcur, cube)
         tcur += DT
-        
-        
-    # Convert trajectory points to numpy array for easy indexing
-    trajectory_points = np.array(trajectory_points)
-    trajectory_velocities = np.array(trajectory_velocities)
-    trajectory_accelerations = np.array(trajectory_accelerations)
-    time = np.array(time)
-    
-    print("Sample trajectory points:", trajectory_points[:5])
-    print("Sample trajectory velocities:", trajectory_velocities[:5])
-    print("Sample trajectory accelerations:", trajectory_accelerations[:5])
-    
-#     print(trajectory_points)
-    # Plotting the trajectory in 3D
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot(trajectory_points[:, 0], trajectory_points[:, 1], trajectory_points[:, 2], 'b-', label='Trajectory')
-    ax.scatter(qe[0], qe[1], qe[2], color='r', label='Goal', zorder=5)
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
-    ax.set_title("Trajectory")
-    ax.legend()
-    plt.show()
-    
-    #path plot 
-    # Assuming all necessary imports and previous definitions are present
-    
-    path = new_path_g(path)
-    # Compute 3D positions for each configuration in the path
-    x_values = [point[0] for point in path]
-    y_values = [point[1] for point in path]
-    z_values = [point[2] for point in path]
-    
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.plot(x_values, y_values, z_values, 'yo-', label='Computed Path')
-    ax.set_xlabel("X")
-    ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
-    ax.set_title("Path")
-    ax.legend()
-    plt.show()
-    
-#     def plot_trajectory(trajectory, u_s, p_goal, dt=1):
-#     positions = np.array([x[0] for x in trajectory])
-#     velocities = np.array([x[1] for x in trajectory])
-#     accelerations = np.array(u_s)
 
-    # Create time array for plotting
-#     time = np.arange(0, len(trajectory) * dt, dt)
-
-    # Plotting
-#     fig, axs = plt.subplots(4, 1, figsize=(10, 15))
-
-#     # Plot trajectory
-#     axs[0].plot(positions[:, 0], positions[:, 1], label='Position Trajectory', color='b')
-#     axs[0].scatter(p_goal[0], p_goal[1], color='r', label='Goal', zorder=5)  # Plot the goal point   
-#     axs[0].set_title('Trajectory')
-#     axs[0].set_xlabel('X Position')
-#     axs[0].set_ylabel('Y Position')
-#     axs[0].grid()
-#     axs[0].legend()
-
-    fig, axs = plt.subplots(3, 1, figsize=(10, 15))
-
-    # Position Plot
-    axs[0].plot(time, trajectory_points[:, 0], label='X Position', color='b')
-    axs[0].plot(time, trajectory_points[:, 1], label='Y Position', color='r')
-    axs[0].plot(time, trajectory_points[:, 2], label='Z Position', color='y')
-    axs[0].set_title('Position vs Time')
-    axs[0].set_xlabel('Time (s)')
-    axs[0].set_ylabel('Position')
-    axs[0].legend()
-    axs[0].grid()
-
-    # Velocity Plot
-    axs[1].plot(time, trajectory_velocities[:, 0], label='X Velocity', color='b')
-    axs[1].plot(time, trajectory_velocities[:, 1], label='Y Velocity', color='r')
-    axs[1].plot(time, trajectory_velocities[:, 2], label='Z Velocity', color='y')
-    axs[1].set_title('Velocity vs Time')
-    axs[1].set_xlabel('Time (s)')
-    axs[1].set_ylabel('Velocity')
-    axs[1].legend()
-    axs[1].grid()
-
-    # Acceleration Plot
-    axs[2].plot(time, trajectory_accelerations[:, 0], label='X Acceleration', color='b')
-    axs[2].plot(time, trajectory_accelerations[:, 1], label='Y Acceleration', color='r')
-    axs[2].plot(time, trajectory_accelerations[:, 2], label='Z Acceleration', color='y')
-    axs[2].set_title('Acceleration vs Time')
-    axs[2].set_xlabel('Time (s)')
-    axs[2].set_ylabel('Acceleration')
-    axs[2].legend()
-    axs[2].grid()
-
-    plt.tight_layout()
-    plt.show()
-
-    
     
 
     
